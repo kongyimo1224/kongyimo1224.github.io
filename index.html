@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yimo Kong</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Yimo Kong: graphics and engine programmer. C++, OpenGL, real-time rendering and tools.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single column of "viewports" — each project opens on its own running footage framed like an engine viewport, with a profiler-style stat strip underneath. */
+:root{
+  --bg:#f3f1ec; --surface:#ffffff; --ink:#15171c; --muted:#5d6370; --line:#dcd8cf;
+  --accent:#d9480f; --accent-ink:#ffffff; --hud:#0e1116; --hud-ink:#e8e6e1; --hud-dim:#8b919c;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1115; --surface:#171a20; --ink:#ecebe7; --muted:#9aa1ad; --line:#2a2f38;
+  --accent:#ff7a3d; --accent-ink:#120a05; --hud:#07080b; --hud-ink:#e8e6e1; --hud-dim:#8b919c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --surface:#171a20; --ink:#ecebe7; --muted:#9aa1ad; --line:#2a2f38;
+  --accent:#ff7a3d; --accent-ink:#120a05; --hud:#07080b; --hud-ink:#e8e6e1; --hud-dim:#8b919c; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px;flex-wrap:wrap}
+.mark{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.02em;text-decoration:none}
+.top nav{display:flex;gap:20px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.top nav a{text-decoration:none}
+.top nav a:hover{color:var(--ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:56px;align-items:center;padding-block:28px 56px}
+.portrait{margin:0;justify-self:end;width:100%;max-width:340px}
+.portrait img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 40px -22px rgba(0,0,0,.45);background:#fff}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,5.2vw,58px);line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;color:var(--muted);max-width:34ch;margin:0 0 24px}
+.status{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;border:1px solid var(--line);background:var(--surface);padding:8px 12px;border-radius:999px;margin-bottom:24px}
+.dot{width:8px;height:8px;border-radius:50%;background:#2f9e44;box-shadow:0 0 0 3px color-mix(in srgb,#2f9e44 25%,transparent)}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;text-decoration:none;padding:11px 16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:hover{transform:translateY(-1px)}
+
+/* viewport frame */
+.viewport{background:var(--hud);border-radius:10px;overflow:hidden;box-shadow:0 18px 40px -18px rgba(0,0,0,.45);color:var(--hud-ink);min-width:0}
+.vp-bar{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--hud-dim);padding:8px 12px;border-bottom:1px solid #1f242c}
+.vp-bar b{color:var(--hud-ink);font-weight:600}
+.vp-media{position:relative;aspect-ratio:16/10;max-width:100%;background:#000}
+.vp-media video,.vp-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.hud{position:absolute;left:10px;bottom:10px;font-family:var(--mono);font-size:11px;line-height:1.5;background:rgba(7,8,11,.78);border:1px solid rgba(255,255,255,.12);padding:6px 9px;border-radius:4px;color:var(--hud-ink)}
+.hud span{color:#ffb38a}
+
+/* sections */
+section{padding-block:56px;border-top:1px solid var(--line)}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(24px,3vw,32px);letter-spacing:-.01em;margin:0;text-wrap:balance}
+.sec-note{color:var(--muted);font-size:14px}
+
+/* project */
+.project{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:36px;align-items:start;margin-bottom:64px}
+.project:last-child{margin-bottom:0}
+.project.flip{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.project.flip .media-col{order:2}
+.media-col{display:grid;gap:12px;min-width:0}
+.thumbs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.thumbs .vp-media{aspect-ratio:16/9}
+h3{font-family:var(--display);font-weight:500;font-size:22px;line-height:1.2;margin:0 0 6px;text-wrap:balance}
+.role{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.text-col{min-width:0}
+.text-col p{margin:0 0 14px;max-width:62ch}
+.text-col ul{margin:0 0 18px;padding-left:18px;max-width:62ch}
+.text-col li{margin-bottom:8px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:0;list-style:none}
+.tags li{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:3px 8px;color:var(--muted);margin:0}
+.links{display:flex;gap:16px;flex-wrap:wrap;font-weight:600;font-size:15px}
+.links a{text-decoration:none;border-bottom:2px solid var(--accent)}
+
+/* profiler strip */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:0 0 20px}
+.stat{background:var(--surface);padding:12px 14px}
+.stat b{display:block;font-family:var(--mono);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.stat small{display:block;color:var(--muted);font-size:12px;line-height:1.35}
+.bar{display:block;height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:62.4%;background:var(--accent)}
+
+/* more work grid */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.card-media{aspect-ratio:16/9;border-radius:4px;overflow:hidden;margin:0 0 16px}
+.term{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--hud);color:var(--hud-ink);border-radius:4px;padding:12px 14px;margin:0 0 16px;overflow-x:auto;white-space:pre}
+.term span{color:var(--hud-dim)}
+.term b{color:#8ce99a;font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;min-width:0}
+.card h3{font-size:18px}
+.card p{color:var(--muted);margin:0 0 14px;font-size:15px}
+.card .tags{margin-top:auto;margin-bottom:0}
+.techlist{font-family:var(--mono);font-size:12.5px;line-height:1.75;margin:0 0 16px;padding:0;list-style:none;color:var(--ink)}
+.techlist li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line)}
+.techlist li span:last-child{color:var(--muted);text-align:right}
+
+/* engine feature map */
+.engine{margin:-28px 0 64px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px}
+.engine-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap;margin-bottom:20px}
+.engine-head h3{margin:0}
+.engine-head p{margin:0;color:var(--muted);font-size:14px}
+.key{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.key i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.engine-grid{columns:3 250px;column-gap:28px}
+.eg{break-inside:avoid;margin:0 0 22px}
+.eg h4{font-family:var(--mono);font-weight:600;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.eg ul{list-style:none;margin:0;padding:0;font-size:14px;line-height:1.45}
+.eg li{position:relative;padding-left:16px;margin:0 0 7px;color:var(--muted)}
+.eg li::before{content:"";position:absolute;left:1px;top:.5em;width:6px;height:6px;border-radius:50%;border:1px solid currentColor;opacity:.7}
+.eg li.me{color:var(--ink);font-weight:500}
+.eg li.me::before{background:var(--accent);border-color:var(--accent);opacity:1}
+/* switchers & terminal */
+.vp-tabs{display:flex;gap:2px;padding:6px;border-top:1px solid #1f242c;flex-wrap:wrap}
+.vp-tabs button,.term-tabs button{font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.02em;color:var(--hud-dim);background:transparent;border:1px solid transparent;border-radius:4px;padding:6px 10px;cursor:pointer}
+.vp-tabs button:hover{color:var(--hud-ink)}
+.vp-tabs button[aria-selected="true"]{color:var(--hud-ink);background:#1b2028;border-color:#2b323d}
+.termbox{background:var(--hud);border-radius:6px;margin:0 0 16px;overflow:hidden}
+.term-tabs{display:flex;gap:4px;padding:6px;border-bottom:1px solid #1f242c;flex-wrap:wrap}
+.term-tabs button{color:#ffb38a;border-color:#2b323d}
+.term-tabs button:hover{background:#1b2028}
+.termbox .term{margin:0;border-radius:0;height:13.5em;overflow:auto;white-space:pre-wrap;word-break:break-word}
+/* shader lab */
+.lab-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;background:#000}
+.lab-tile{position:relative;padding:0;border:0;background:#000;cursor:pointer;aspect-ratio:3/2;overflow:hidden;border-radius:2px}
+.lab-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s ease,filter .25s ease}
+.lab-tile span{position:absolute;left:0;right:0;bottom:0;font-family:var(--mono);font-size:11px;color:#fff;text-align:left;padding:14px 7px 5px;background:linear-gradient(transparent,rgba(0,0,0,.8))}
+.lab-tile span b{color:#ffb38a;font-weight:600}
+.lab-tile:hover img,.lab-tile:focus-visible img{transform:scale(1.05);filter:brightness(1.15)}
+.resume-dlg{width:min(860px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 24px);padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);overflow:hidden;display:none;flex-direction:column}
+.resume-dlg[open]{display:flex}
+.resume-dlg::backdrop{background:rgba(8,9,12,.62)}
+.resume-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.resume-head div{display:flex;gap:10px;align-items:center}
+.resume-head a{font-weight:600;text-decoration:none;border-bottom:2px solid var(--accent)}
+.resume-head button{font:inherit;font-size:13px;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer}
+.resume-body{overflow:auto;background:#e9e7e2;padding:12px}
+.resume-body img{display:block;width:100%;height:auto;background:#fff;box-shadow:0 6px 20px -10px rgba(0,0,0,.4)}
+.lab{width:min(1100px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 24px);padding:0;border:1px solid #2b323d;border-radius:10px;background:var(--hud);color:var(--hud-ink);overflow:hidden}
+.lab::backdrop{background:rgba(5,6,9,.78)}
+.lab-head,.lab-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;font-family:var(--mono);font-size:13px;flex-wrap:wrap}
+.lab-head span{color:var(--hud-dim)}
+.lab-actions{display:flex;gap:6px}
+.lab button{font:inherit;font-family:var(--mono);font-size:12px;color:var(--hud-ink);background:#1b2028;border:1px solid #2b323d;border-radius:4px;padding:6px 10px;cursor:pointer}
+.lab button:hover{background:#252c36}
+.lab-stage{position:relative;background:#000}
+.lab-stage canvas{display:block;width:100%;height:min(62vh,600px);touch-action:none;outline:none}
+.lab-status{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:20px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--hud-dim)}
+.lab-status[hidden]{display:none}
+.lab-foot p{margin:0;color:var(--hud-dim);font-size:12px;flex:1 1 320px;min-width:0}
+.lab-buttons{display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:600px){.lab-stage canvas{height:52vh}.lab-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.lab-tile span{font-size:9.5px;padding:10px 4px 3px}}
+/* experience */
+.timeline{display:grid;gap:0}
+.row{display:grid;grid-template-columns:180px minmax(0,1fr);gap:24px;padding-block:18px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.when{font-family:var(--mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:3px}
+.row h3{font-size:17px;margin-bottom:4px}
+.row p{margin:0;color:var(--muted);max-width:66ch}
+
+/* skills */
+.skills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.skills h3{font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.skills p{margin:0}
+
+/* contact */
+.contact{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px;align-items:end}
+.contact h2{font-size:clamp(28px,4vw,44px);line-height:1.08}
+.clist{display:grid;gap:10px;font-size:16px}
+.clist div{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding-bottom:10px;flex-wrap:wrap}
+.clist dt{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.clist dd{margin:0;font-weight:500;word-break:break-word}
+.copy{font:inherit;font-size:12px;font-family:var(--mono);background:none;border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:1px 7px;margin-left:8px;cursor:pointer}
+footer{padding-block:28px 40px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:56px}
+
+@media (max-width:860px){
+  .hero,.project,.project.flip,.contact{grid-template-columns:minmax(0,1fr)}
+  .hero{gap:28px}
+  .portrait{order:-1;justify-self:start;max-width:136px}
+  .project.flip .media-col{order:0}
+  .grid3,.skills{grid-template-columns:minmax(0,1fr)}
+  .row{grid-template-columns:minmax(0,1fr);gap:4px}
+}
+@media (max-width:480px){ .stats{grid-template-columns:minmax(0,1fr)} .thumbs{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} .btn:hover{transform:none} }
+</style>
+<style>img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="#top" id="top">YIMO KONG</a>
+    <nav aria-label="Sections">
+      <a href="#work">Work</a><a href="#more">Projects</a><a href="#experience">Experience</a><a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow">Graphics, engine &amp; full-stack programmer</p>
+      <h1>Yimo Kong</h1>
+      <p class="lede">C++ and OpenGL rendering, engine tools and real-time 3D, plus full-stack web apps from database to browser. Computer Science in Real-Time Interactive Simulation at DigiPen Institute of Technology.</p>
+      <div class="status"><span class="dot" aria-hidden="true"></span>Open to a 12-month internship from April 2027</div>
+      <div class="cta">
+        <a class="btn primary" href="https://bloodygoodcurry.netlify.app/" target="_blank" rel="noopener">Play Bloody Good Curry ↗</a>
+        <a class="btn" href="assets/Yimo_Kong_Resume.pdf" data-resume>Resume</a>
+        <a class="btn" href="https://github.com/kongyimo1224" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <figure class="portrait">
+      <img src="assets/yimo.jpg" width="720" height="900" alt="Portrait of Yimo Kong">
+    </figure>
+  </div>
+</div>
+
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head"><h2>Selected work</h2><span class="sec-note">All footage is captured from the real builds.</span></div>
+
+    <article class="project">
+      <div class="media-col">
+        <div class="viewport">
+          <div class="vp-bar"><span><b>Gameplay</b> · trailer cut</span><span>Windows + WebGL builds</span></div>
+          <div class="vp-media"><video src="assets/bgc-play.mp4" poster="assets/bgc-play.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Bloody Good Curry gameplay"></video></div>
+        </div>
+        <div class="viewport">
+          <div class="vp-bar"><span><b>Editor</b> · ImGui tooling</span><span>transform gizmo · prefab inspector</span></div>
+          <div class="vp-media" style="aspect-ratio:16/8.4"><video src="assets/bgc-editor.mp4" poster="assets/bgc-editor.jpg" autoplay muted loop playsinline preload="metadata" aria-label="The in-house level editor"></video></div>
+        </div>
+      </div>
+      <div class="text-col">
+        <h3>Bloody Good Curry</h3>
+        <p class="role">Graphics Lead · 7-person team · Sep 2025 – Apr 2026</p>
+        <p>A 2D top-down action game built on our own C++/OpenGL engine and editor, shipped as a Windows build and a browser build you can play right now.</p>
+        <div class="stats">
+          <div class="stat"><b>~53K</b><small>lines in our custom C++ engine</small></div>
+          <div class="stat"><b>−38%</b><small>draw calls in the densest level</small></div>
+          <div class="stat"><b>250→156</b><small>draw calls per frame<span class="bar" aria-hidden="true"><i></i></span></small></div>
+        </div>
+        <ul>
+          <li>Designed and owned the rendering pipeline: game and editor viewports, camera, screen-to-world picking and multi-pass rendering.</li>
+          <li>Profiled the busiest level and added GPU-instanced sprite batching, cutting draw calls by 38%.</li>
+          <li>Built the engine core loop, a real-time CPU profiler and the editor’s transform gizmo and animation editor.</li>
+          <li>Took the engine to the web with a WebGL/WebAssembly build.</li>
+        </ul>
+        <ul class="tags"><li>C++</li><li>OpenGL</li><li>GLSL</li><li>ImGui</li><li>Emscripten</li><li>FMOD</li></ul>
+        <div class="links"><a href="https://bloodygoodcurry.netlify.app/" target="_blank" rel="noopener">Play in browser ↗</a></div>
+      </div>
+    </article>
+
+        <div class="engine" id="engine">
+      <div class="engine-head">
+        <h3>Inside our engine</h3>
+        <p><span class="key"><i aria-hidden="true"></i>code I wrote</span> · everything else built by the team, no commercial engine</p>
+      </div>
+      <div class="engine-grid">
+        <div class="eg"><h4>Rendering · OpenGL 3.3 / WebGL 2</h4><ul>
+          <li class="me">Render system: game and editor viewports, split layouts, draw ordering</li>
+          <li class="me">GPU-instanced sprite batching (250 → 156 draw calls)</li>
+          <li class="me">Orthographic 2D camera with aspect-aware projection, focus and zoom</li>
+          <li class="me">Screen-to-world picking, hit tests and selection framing</li>
+          <li class="me">2D lighting: procedural glow lights with radial falloff</li>
+          <li class="me">Combat VFX and player hit feedback</li>
+          <li>Sprite and sprite-sheet rendering, shapes, UI sprites</li>
+          <li>Sprite-sheet animation component</li>
+          <li>Drop shadows, hit flash, global brightness</li>
+          <li>FreeType text rendering with a glyph cache</li>
+          <li>Particle system with saved VFX presets</li>
+          <li>MPEG-1 video cutscenes with colour keying</li>
+        </ul></div>
+        <div class="eg"><h4>Editor · Dear ImGui</h4><ul>
+          <li class="me">Transform gizmo: translate, rotate, scale</li>
+          <li class="me">Sprite-sheet animation editor</li>
+          <li class="me">Per-frame CPU profiler: update, render, UI</li>
+          <li class="me">Docked layout, hierarchy, inspector, properties</li>
+          <li class="me">JSON data editor, layer panel, prefab spawn panel</li>
+          <li>Content browser with drag-and-drop import</li>
+          <li>Undo / redo</li>
+          <li>Asset manager and build-size analyzer</li>
+          <li>Glow-light painting tool</li>
+        </ul></div>
+        <div class="eg"><h4>Core & architecture</h4><ul>
+          <li class="me">Main loop: clamped delta time, window events, UI frame lifecycle</li>
+          <li>System manager with per-system timing</li>
+          <li>Component-based game objects and object factory</li>
+          <li>Message bus</li>
+          <li>Layers for grouping and visibility</li>
+          <li>Multiple game projects per engine; File → New Game scaffolds code and content</li>
+          <li>Crash logger and responsiveness watchdog</li>
+        </ul></div>
+        <div class="eg"><h4>Memory & data</h4><ul>
+          <li>Page-based fixed-size object allocator</li>
+          <li>Pooled game objects and typed component pools</li>
+          <li>JSON serialization for levels, prefabs and config</li>
+          <li>Prefab, resource and asset managers</li>
+          <li>Debug-heap leak detection</li>
+        </ul></div>
+        <div class="eg"><h4>Gameplay systems</h4><ul>
+          <li class="me">Boss fight, enemy animations, health bars (game code)</li>
+          <li class="me">AI: decision trees, blackboard, behaviour component</li>
+          <li>2D physics: AABB movement, collision response, triggers</li>
+          <li>Uniform-grid broad phase</li>
+          <li>Attack hitbox system</li>
+          <li>Keyboard, mouse and gamepad input</li>
+          <li>Immediate-mode GUI for menus</li>
+        </ul></div>
+        <div class="eg"><h4>Audio & platforms</h4><ul>
+          <li>FMOD on desktop, Web Audio in the browser</li>
+          <li>Combat audio events</li>
+          <li>One codebase, two targets: Windows and WebAssembly</li>
+          <li>CMake presets; chunked asset package streamed to the browser</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <article class="project flip">
+      <div class="media-col">
+        <div class="viewport" data-switcher>
+          <div class="vp-bar"><span><b data-label>3D City View</b> · Singapore</span><span>Babylon.js × MapLibre GL</span></div>
+          <div class="vp-media"><video data-screen src="assets/chargedup-city.mp4" poster="assets/chargedup-city.jpg" autoplay muted loop playsinline preload="metadata" aria-label="ChargedUp footage"></video>
+            <div class="hud" data-hud>vector tiles → meshes · <span>Web Workers</span> · culling · LOD</div></div>
+          <div class="vp-tabs" role="tablist" aria-label="ChargedUp views">
+            <button type="button" role="tab" aria-selected="true" id="cu-city" data-src="assets/chargedup-city" data-label="3D City View" data-hud="vector tiles → meshes · &lt;span&gt;Web Workers&lt;/span&gt; · culling · LOD">3D city</button>
+            <button type="button" role="tab" aria-selected="false" id="cu-routes" data-src="assets/chargedup-routes" data-label="Route Options" data-hud="charging stops ranked by &lt;span&gt;time, cost and detour&lt;/span&gt;">Route planner</button>
+            <button type="button" role="tab" aria-selected="false" id="cu-stations" data-src="assets/chargedup-stations" data-label="Station Network" data-hud="&lt;span&gt;2,733&lt;/span&gt; charging locations across Singapore">Stations</button>
+          </div>
+        </div>
+      </div>
+      <div class="text-col">
+        <h3>ChargedUp</h3>
+        <p class="role">Tech Lead · 8-person team · Sep 2026 – Mar 2027</p>
+        <p>An EV journey planner for Singapore, built for industry client Upsight. It recommends where and how long to charge, and shows the trip in an explorable 3D city.</p>
+        <div class="stats">
+          <div class="stat"><b>8</b><small>engineers I lead</small></div>
+          <div class="stat"><b>200+</b><small>automated tests</small></div>
+          <div class="stat"><b>6</b><small>client milestones</small></div>
+        </div>
+        <ul>
+          <li>Architected the custom real-time 3D city renderer on Babylon.js, sharing MapLibre GL's map: it streams vector tiles and builds building and road meshes off the main thread in Web Workers.</li>
+          <li>Kept it smooth with spatial batching, visibility culling and adaptive level of detail.</li>
+          <li>Own the system architecture and delivery pipeline: GitHub Actions CI, Docker builds and Jenkins deployment.</li>
+          <li>Lead client communication and present each milestone.</li>
+        </ul>
+        <ul class="tags"><li>TypeScript</li><li>Babylon.js</li><li>MapLibre GL</li><li>Web Workers</li><li>Docker</li><li>Jenkins</li></ul>
+      </div>
+    </article>
+
+    <article class="project">
+      <div class="media-col">
+        <div class="viewport" data-switcher>
+          <div class="vp-bar"><span><b data-label>It starts to rain</b> · 四水归堂</span><span>Unreal Engine 5 · Lumen</span></div>
+          <div class="vp-media"><video data-screen src="assets/ssgt-open.mp4" poster="assets/ssgt-open.jpg" autoplay muted loop playsinline preload="metadata" aria-label="四水归堂 footage"></video>
+            <div class="hud" data-hud>四水归堂 · rain falls, but <span>not into the tianjing</span></div></div>
+          <div class="vp-tabs" role="tablist" aria-label="四水归堂 scenes">
+            <button type="button" role="tab" aria-selected="true" id="fw-open" data-src="assets/ssgt-open" data-label="It starts to rain" data-hud="四水归堂 · rain falls, but &lt;span&gt;not into the tianjing&lt;/span&gt;">Opening</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-east" data-src="assets/ssgt-east" data-label="East water · the vat" data-hud="hold E to &lt;span&gt;push the vat&lt;/span&gt; out under the eaves">East water</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-north" data-src="assets/ssgt-north" data-label="North water · horse-head wall" data-hud="through the upstairs door, up the ladder to the &lt;span&gt;horse-head wall&lt;/span&gt;">North water</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-south" data-src="assets/ssgt-south" data-label="South water · the last one" data-hud="the south eaves run again · &lt;span&gt;all four waters return&lt;/span&gt;">South water</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-mirror" data-src="assets/ssgt-mirror" data-label="The pool becomes a mirror" data-hud="four waters return · &lt;span&gt;step into the reflection&lt;/span&gt;">Mirror pool</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-past" data-src="assets/ssgt-past" data-label="The house in memory" data-hud="same house, &lt;span&gt;another era&lt;/span&gt; · blossom in the courtyard">The past</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-memory" data-src="assets/ssgt-memory" data-label="Talking to the family" data-hud="the past · speak with &lt;span&gt;every family member&lt;/span&gt;">Family</button>
+            <button type="button" role="tab" aria-selected="false" id="fw-ending" data-src="assets/ssgt-ending" data-label="全家福 · the family portrait" data-hud="ending · &lt;span&gt;one continuous shot&lt;/span&gt; to the title card" data-once>Ending · 全家福</button>
+          </div>
+        </div>
+      </div>
+      <div class="text-col">
+        <h3>四水归堂 Four Waters Return to the Hall</h3>
+        <p class="role">Tsinghua School of Architecture × miHoYo competition · 2026</p>
+        <p>A first-person environmental puzzle game set in an old Huizhou courtyard house. You come home after years away and repair the four eaves so the rain can flow back into the courtyard. When the pool fills and turns to a mirror, you step through the reflection into the evening when the whole family still lived there.</p>
+        <div class="stats">
+          <div class="stat"><b>~8,700</b><small>lines of gameplay C++</small></div>
+          <div class="stat"><b>2</b><small>eras of the same house</small></div>
+          <div class="stat"><b>4</b><small>water puzzles</small></div>
+        </div>
+        <ul>
+          <li>All gameplay in Unreal C++: interaction and hold-to-push, the era director, the four water puzzles, the rising pool, family dialogue and the final family-portrait shot.</li>
+          <li>The pool surface shows the other era through a SceneCapture from the player's view; stepping in triggers a wipe transition that blends light, fog, colour grading, rain and sound between the two eras.</li>
+          <li>Python editor scripts build both versions of the house and the village in one pass, and generate textures, terrain, trees, props and sound.</li>
+          <li>Lumen GI and reflections, virtual shadow maps and Nanite; headless test, screenshot and frame-time benchmark modes.</li>
+        </ul>
+        <ul class="tags"><li>Unreal Engine 5</li><li>C++</li><li>Python</li><li>Lumen</li><li>Nanite</li></ul>
+      </div>
+    </article>
+
+    <article class="project">
+      <div class="media-col">
+        <div class="viewport">
+          <div class="vp-bar"><span><b>Shader Lab</b> · click a tile to run it live</span><span>WebGL 2 · original GLSL</span></div>
+          <div class="lab-grid"><button type="button" class="lab-tile" data-lab-open="0" id="lab-tile-0"><img src="assets/lab/thumb0.jpg" alt=""><span><b>01</b> Tabs</span></button><button type="button" class="lab-tile" data-lab-open="1" id="lab-tile-1"><img src="assets/lab/thumb1.jpg" alt=""><span><b>02</b> Ray casting</span></button><button type="button" class="lab-tile" data-lab-open="2" id="lab-tile-2"><img src="assets/lab/thumb2.jpg" alt=""><span><b>03</b> Ray tracing</span></button><button type="button" class="lab-tile" data-lab-open="3" id="lab-tile-3"><img src="assets/lab/thumb3.jpg" alt=""><span><b>04</b> Blinn-Phong</span></button><button type="button" class="lab-tile" data-lab-open="4" id="lab-tile-4"><img src="assets/lab/thumb4.jpg" alt=""><span><b>05</b> Env mapping</span></button><button type="button" class="lab-tile" data-lab-open="5" id="lab-tile-5"><img src="assets/lab/thumb5.jpg" alt=""><span><b>06</b> Night scene</span></button><button type="button" class="lab-tile" data-lab-open="6" id="lab-tile-6"><img src="assets/lab/thumb6.jpg" alt=""><span><b>07</b> NPR cartoon</span></button><button type="button" class="lab-tile" data-lab-open="7" id="lab-tile-7"><img src="assets/lab/thumb7.jpg" alt=""><span><b>08</b> Portal</span></button><button type="button" class="lab-tile" data-lab-open="8" id="lab-tile-8"><img src="assets/lab/thumb8.jpg" alt=""><span><b>09</b> Deferred ogres</span></button></div>
+        </div>
+      </div>
+      <div class="text-col">
+        <h3>Real-Time Rendering &amp; Ray Tracing</h3>
+        <p class="role">Graphics coursework · 2025 – 2026</p>
+        <p>Nine real-time rendering demos from my graphics coursework, from a ray-casting maze and a ray tracer to a six-pass cartoon renderer and deferred shading. Every tile opens the demo running live in your browser: I ported the C++/OpenGL framework to WebGL 2 and the page compiles my original GLSL files.</p>
+        <ul class="techlist">
+          <li><span>Deferred shading</span><span>G-buffer, many lights</span></li>
+          <li><span>Environment mapping</span><span>HDR, reflection, refraction</span></li>
+          <li><span>Ray tracing</span><span>BVH and SAH KD-tree</span></li>
+          <li><span>Stylised</span><span>toon, portals, fog</span></li>
+          <li><span>CPU rasterizer</span><span>depth buffer, texturing</span></li>
+        </ul>
+        <ul class="tags"><li>C++</li><li>OpenGL</li><li>GLSL</li><li>Ray tracing</li></ul>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="more">
+  <div class="wrap">
+    <div class="sec-head"><h2>More projects</h2></div>
+    <div class="grid3">
+      <article class="card">
+        <div class="vp-media card-media"><video src="assets/cooked.mp4" poster="assets/cooked.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Cooked! gameplay"></video></div>
+        <h3>Cooked!</h3>
+        <p class="role">C++ · 5-person team · Jan – Mar 2025</p>
+        <p>A 2D cooking game where you prep ingredients and serve orders against the clock. I built gameplay objects and collision, randomised ingredient spawning, the mouse interaction, the pause and options menus, and audio.</p>
+        <ul class="tags"><li>C++</li><li>2D gameplay</li><li>UI</li></ul>
+      </article>
+      <article class="card">
+        <div class="termbox">
+          <div class="term-tabs" role="group" aria-label="Replay a recorded session">
+            <button type="button" id="run-stress" data-run="stress">▶ Stress test</button>
+            <button type="button" id="run-trade" data-run="trade">▶ Alice buys from Bob</button>
+          </div>
+          <pre class="term" id="term" aria-live="polite"><span>$</span> ./Server 5000
+<span>Pick a recorded session to replay.</span></pre>
+        </div>
+        <h3>C++ Trading Platform</h3>
+        <p class="role">C++ · Winsock · 3-person team · 2026</p>
+        <p>A multi-threaded TCP trading server with a console client, a load generator and a browser dashboard. I wrote the trading engine: order validation, price-time priority matching, persistence and restart recovery. The replays above are real output from the server.</p>
+        <ul class="tags"><li>C++</li><li>TCP sockets</li><li>Multithreading</li></ul>
+      </article>
+      <article class="card">
+        <h3>CS Autobattler</h3>
+        <p class="role">Unity · C# · Jun 2026 – present</p>
+        <p>A tactical squad autobattler. I built the squad AI: influence maps, A* pathfinding on a height-field grid, position reservation and cover scoring, plus a shop, unit merging and a roguelike campaign.</p>
+        <ul class="tags"><li>Game AI</li><li>A*</li><li>Influence maps</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="experience">
+  <div class="wrap">
+    <div class="sec-head"><h2>Experience &amp; education</h2></div>
+    <div class="timeline">
+      <div class="row"><div class="when">Sep 2026 – Mar 2027</div><div><h3>Tech Lead · Upsight × DigiPen industry project</h3><p>Leading an 8-person team building ChargedUp for an industry client across six milestones.</p></div></div>
+      <div class="row"><div class="when">2024 – 2028</div><div><h3>BSc (Hons) Computer Science in Real-Time Interactive Simulation</h3><p>DigiPen Institute of Technology Singapore, jointly with Singapore Institute of Technology. Overseas immersion at DigiPen Europe-Bilbao, 2026.</p></div></div>
+      <div class="row"><div class="when">Sep 2023 – Feb 2024</div><div><h3>Software Development &amp; Data Analytics Intern · GERMS Digital</h3><p>Built SYFER, a dashboard combining Google Trends, Meta API and RSS data with automated daily refreshes, later adopted company-wide. Maintained UOB campaign websites.</p></div></div>
+      <div class="row"><div class="when">2021 – 2024</div><div><h3>Diploma in Infocomm &amp; Media Engineering</h3><p>Nanyang Polytechnic · Director's List.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="sec-head"><h2>Toolbox</h2></div>
+    <div class="skills">
+      <div><h3>Languages</h3><p>C++, C, C#, GLSL, TypeScript, Python, SQL</p></div>
+      <div><h3>Graphics &amp; engines</h3><p>OpenGL, GLFW/GLM, ImGui, Babylon.js, Unreal Engine, Unity, Blender</p></div>
+      <div><h3>Web &amp; full-stack</h3><p>TypeScript, React, Next.js, Node.js, REST APIs, SQL, Docker</p></div>
+      <div><h3>Tools</h3><p>Git, CMake, Visual Studio, Linux/WSL, Docker, GitHub Actions, Jenkins</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap contact">
+    <h2>Looking for a graphics, engine, full-stack or C++ intern from April 2027?</h2>
+    <dl class="clist">
+      <div><dt>Email</dt><dd><span id="email">kongyimoo@gmail.com</span><button class="copy" type="button" id="copy-email" data-copy="kongyimoo@gmail.com">copy</button></dd></div>
+      <div><dt>LinkedIn</dt><dd><a href="https://www.linkedin.com/in/yimokong1224/" target="_blank" rel="noopener">yimokong1224</a></dd></div>
+      <div><dt>GitHub</dt><dd><a href="https://github.com/kongyimo1224" target="_blank" rel="noopener">kongyimo1224</a></dd></div>
+      <div><dt>Languages</dt><dd>English · Mandarin (native)</dd></div>
+    </dl>
+  </div>
+  <div class="wrap"><footer>© 2026 Yimo Kong · Singapore</footer></div>
+</section>
+
+<dialog id="resume" class="resume-dlg" aria-label="Resume">
+  <div class="resume-head"><b>Resume · Yimo Kong</b><div><a href="assets/Yimo_Kong_Resume.pdf" download="Yimo_Kong_Resume.pdf">Download PDF</a><button type="button" data-resume-close aria-label="Close">Close ✕</button></div></div>
+  <div class="resume-body"><img src="assets/resume.jpg" width="1405" height="1988" alt="Resume of Yimo Kong" loading="lazy"></div>
+</dialog>
+<dialog id="lab" class="lab" aria-label="Shader Lab">
+  <div class="lab-head">
+    <div><b data-lab-title>Shader Lab</b> <span data-lab-label></span></div>
+    <div class="lab-actions"><button type="button" data-lab-nav="prev" aria-label="Previous demo">←</button><button type="button" data-lab-nav="next" aria-label="Next demo">→</button><button type="button" data-lab-close aria-label="Close">Close ✕</button></div>
+  </div>
+  <div class="lab-stage"><canvas tabindex="0" aria-label="Live WebGL demo"></canvas><p class="lab-status" data-lab-status hidden></p></div>
+  <div class="lab-foot"><p data-lab-hint></p><div class="lab-buttons" data-lab-buttons></div></div>
+</dialog>
+<script>
+const LOGS = {"stress": ["$ ./Stress 127.0.0.1 5000 8 30 20 demo", "Stress test completed.", "Clients: 8", "Operations per client: 30", "Elapsed seconds: 1.55612", "Commands sent: 264", "Accepted orders observed: 202", "Trade notices observed: 840", "Snapshots observed: 1700", "Errors observed: 0", "Client failures: 0"], "trade": ["$ ./Client 127.0.0.1 5000 bob", "> sell 10 101.00", "$ ./Client 127.0.0.1 5000 alice", "> buy 5 101.00", "[INFO] Accepted BUY order ORD0204: 5 ACME @ 101.00.", "[INFO] Trade TRD0106: alice bought 5 ACME from bob @ 101.00.", "[INFO] Order ORD0204 for alice on ACME was fully filled on entry.", "[SNAPSHOT] alice | symbol ACME | last 101.00 | bid 100.00 | ask 101.00 | cash 9495.00 avail 9495.00 | holdings 55 avail 55", "> account", "  Cash:             9495.00", "  Available cash:   9495.00", "  ACME: held 55 | reserved 0 | available 55"]};
+
+(() => {
+  const d = document.getElementById('resume');
+  document.querySelectorAll('[data-resume]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); d.showModal(); }));
+  d.querySelector('[data-resume-close]').addEventListener('click', () => d.close());
+  d.addEventListener('click', e => { if (e.target === d) d.close(); });
+})();
+document.querySelectorAll('[data-switcher]').forEach(box => {
+  const v = box.querySelector('[data-screen]'), label = box.querySelector('[data-label]'), hud = box.querySelector('[data-hud]');
+  const tabs = [...box.querySelectorAll('[role="tab"]')];
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(o => o.setAttribute('aria-selected', o === t));
+    v.loop = !('once' in t.dataset);
+    v.poster = t.dataset.src + '.jpg'; v.src = t.dataset.src + '.mp4';
+    const p = v.play(); if (p) p.catch(() => {});
+    if (label) label.textContent = t.dataset.label;
+    if (hud) hud.innerHTML = t.dataset.hud;
+  }));
+});
+(() => {
+  const term = document.getElementById('term'); let timer = null;
+  const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const fmt = l => l.startsWith('$') || l.startsWith('>') ? '<span>' + esc(l) + '</span>'
+    : esc(l).replace(/(failures: 0|Errors observed: 0|Client failures: 0|fully filled on entry\.)/g, '<b>$1</b>');
+  document.querySelectorAll('[data-run]').forEach(b => b.addEventListener('click', () => {
+    clearInterval(timer); const lines = LOGS[b.dataset.run]; let i = 0; term.innerHTML = '';
+    const step = () => { if (i >= lines.length) { clearInterval(timer); return; }
+      term.innerHTML += fmt(lines[i++]) + '\n'; term.scrollTop = term.scrollHeight; };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { lines.forEach(() => step()); return; }
+    step(); timer = setInterval(step, 260);
+  }));
+})();
+
+document.getElementById('copy-email').addEventListener('click', e => {
+  const b = e.currentTarget, t = b.dataset.copy;
+  const done = () => { b.textContent = 'copied'; setTimeout(() => b.textContent = 'copy', 1500); };
+  try { navigator.clipboard.writeText(t).then(done).catch(sel); } catch (_) { sel(); }
+  function sel(){ const r = document.createRange(); r.selectNodeContents(document.getElementById('email')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+});
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); v.controls = true; });
+}
+</script>
+<script>/* Shader Lab: a WebGL2 port of Yimo Kong's CSD2151 OpenGL portfolio (Assignment 12).
+   The GLSL shaders are the original files, loaded verbatim and converted to GLSL ES 3.00 at runtime.
+   Meshes are dumped from the original C++ TriangleMesh generator, so geometry matches the desktop build. */
+(() => {
+'use strict';
+const BASE = 'assets/lab/';
+
+/* ---------------- math (column-major, glm conventions) ---------------- */
+const M4 = {
+  I: () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
+  mul(a, b) { const o = new Float32Array(16);
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+      let s = 0; for (let k = 0; k < 4; k++) s += a[k*4+r] * b[c*4+k]; o[c*4+r] = s; }
+    return o; },
+  T(x, y, z) { const m = M4.I(); m[12] = x; m[13] = y; m[14] = z; return m; },
+  S(x, y, z) { const m = M4.I(); m[0] = x; m[5] = y; m[10] = z; return m; },
+  R(angle, ax, ay, az) { const l = Math.hypot(ax, ay, az); ax/=l; ay/=l; az/=l;
+    const c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+    return new Float32Array([t*ax*ax+c, t*ax*ay+s*az, t*ax*az-s*ay, 0,
+      t*ax*ay-s*az, t*ay*ay+c, t*ay*az+s*ax, 0, t*ax*az+s*ay, t*ay*az-s*ax, t*az*az+c, 0, 0,0,0,1]); },
+  persp(fovy, asp, n, f) { const t = 1/Math.tan(fovy/2), m = new Float32Array(16);
+    m[0] = t/asp; m[5] = t; m[10] = -(f+n)/(f-n); m[11] = -1; m[14] = -2*f*n/(f-n); return m; },
+  lookAt(e, c, u) { const f = V3.norm(V3.sub(c, e)), s = V3.norm(V3.cross(f, u)), uu = V3.cross(s, f);
+    return new Float32Array([s[0],uu[0],-f[0],0, s[1],uu[1],-f[1],0, s[2],uu[2],-f[2],0,
+      -V3.dot(s,e), -V3.dot(uu,e), V3.dot(f,e), 1]); },
+  inv(m) { const a = m, o = new Float32Array(16);
+    const b00=a[0]*a[5]-a[1]*a[4], b01=a[0]*a[6]-a[2]*a[4], b02=a[0]*a[7]-a[3]*a[4], b03=a[1]*a[6]-a[2]*a[5],
+      b04=a[1]*a[7]-a[3]*a[5], b05=a[2]*a[7]-a[3]*a[6], b06=a[8]*a[13]-a[9]*a[12], b07=a[8]*a[14]-a[10]*a[12],
+      b08=a[8]*a[15]-a[11]*a[12], b09=a[9]*a[14]-a[10]*a[13], b10=a[9]*a[15]-a[11]*a[13], b11=a[10]*a[15]-a[11]*a[14];
+    let d = b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06; if (!d) return M4.I(); d = 1/d;
+    o[0]=(a[5]*b11-a[6]*b10+a[7]*b09)*d; o[1]=(a[2]*b10-a[1]*b11-a[3]*b09)*d; o[2]=(a[13]*b05-a[14]*b04+a[15]*b03)*d; o[3]=(a[10]*b04-a[9]*b05-a[11]*b03)*d;
+    o[4]=(a[6]*b08-a[4]*b11-a[7]*b07)*d; o[5]=(a[0]*b11-a[2]*b08+a[3]*b07)*d; o[6]=(a[14]*b02-a[12]*b05-a[15]*b01)*d; o[7]=(a[8]*b05-a[10]*b02+a[11]*b01)*d;
+    o[8]=(a[4]*b10-a[5]*b08+a[7]*b06)*d; o[9]=(a[1]*b08-a[0]*b10-a[3]*b06)*d; o[10]=(a[12]*b04-a[13]*b02+a[15]*b00)*d; o[11]=(a[9]*b02-a[8]*b04-a[11]*b00)*d;
+    o[12]=(a[5]*b07-a[4]*b09-a[6]*b06)*d; o[13]=(a[0]*b09-a[1]*b07+a[2]*b06)*d; o[14]=(a[13]*b01-a[12]*b03-a[14]*b00)*d; o[15]=(a[8]*b03-a[9]*b01+a[10]*b00)*d;
+    return o; },
+  xf(m, v) { const [x,y,z,w] = v; return [m[0]*x+m[4]*y+m[8]*z+m[12]*w, m[1]*x+m[5]*y+m[9]*z+m[13]*w,
+    m[2]*x+m[6]*y+m[10]*z+m[14]*w, m[3]*x+m[7]*y+m[11]*z+m[15]*w]; },
+  chain: (...ms) => ms.reduce((a, b) => M4.mul(a, b)),
+};
+const V3 = {
+  sub: (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]], add: (a, b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]],
+  scale: (a, s) => [a[0]*s, a[1]*s, a[2]*s], dot: (a, b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+  cross: (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
+  len: a => Math.hypot(a[0], a[1], a[2]), norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0]/l, a[1]/l, a[2]/l]; },
+  mix: (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t],
+};
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const rad = d => d * Math.PI / 180, PI05 = Math.PI / 2;
+
+/* ---------------- cg::Camera and cg::Light, ported from camera.cpp / light.cpp ---------------- */
+class Camera {
+  constructor(type, position, target = [0,0,0], fov = 45, near = 0.5, far = 200) {
+    Object.assign(this, { type, position: [...position], target: [...target], fov, near, far }); }
+  view() { return M4.lookAt(this.position, this.target, [0,1,0]); }
+  proj(aspect) { return M4.persp(rad(this.fov), aspect, this.near, this.far); }
+  onCursor(dx, dy) {
+    if (!dx && !dy) return;
+    if (this.type === 'orbit') {
+      const p = this.position, r = V3.len(p); if (r < 1e-6) return;
+      let a = Math.asin(p[1] / r), b = Math.atan2(p[0], p[2]);
+      if (dy < 0) a -= 0.02; else if (dy > 0) a += 0.02;
+      if (dx < 0) b += 0.05; else if (dx > 0) b -= 0.05;
+      a = clamp(a, -PI05 + 0.01, PI05 - 0.01);
+      this.position = [r*Math.cos(a)*Math.sin(b), r*Math.sin(a), r*Math.cos(a)*Math.cos(b)];
+    } else {
+      const d = V3.sub(this.target, this.position), r = V3.len(d);
+      let a = Math.asin(d[1] / r), b = Math.atan2(d[0], d[2]);
+      if (dy < 0) a -= 0.02; else if (dy > 0) a += 0.02;
+      if (dx < 0) b -= 0.05; else if (dx > 0) b += 0.05;
+      a = clamp(a, -PI05 + 0.01, PI05 - 0.01);
+      this.target = V3.add(this.position, [r*Math.cos(a)*Math.sin(b), r*Math.sin(a), r*Math.cos(a)*Math.cos(b)]);
+    }
+  }
+  onScroll(dy) {
+    if (this.type === 'orbit') {
+      const p = this.position; let r = V3.len(p); const a = Math.asin(p[1] / r), b = Math.atan2(p[0], p[2]);
+      r += dy > 0 ? -1 : 1; if (r < 1) r = 1;
+      this.position = [r*Math.cos(a)*Math.sin(b), r*Math.sin(a), r*Math.cos(a)*Math.cos(b)];
+    } else {
+      const v = V3.norm(dy > 0 ? V3.sub(this.target, this.position) : V3.sub(this.position, this.target));
+      const step = [v[0], 0, v[2]]; this.position = V3.add(this.position, step); this.target = V3.add(this.target, step);
+    }
+  }
+}
+class Light {
+  constructor(position, L) { this.position = [...position]; this.L = L; }
+  setUniforms(p, i = 0) {
+    p.set(`light[${i}].position`, this.position);
+    if (this.L[0]) { p.set(`light[${i}].L`, this.L[0]); p.set(`light[${i}].La`, this.L[0]); }
+    if (this.L[1]) p.set(`light[${i}].Ld`, this.L[1]);
+    if (this.L[2]) p.set(`light[${i}].Ls`, this.L[2]);
+  }
+  onCursor(dx, dy) { const p = this.position, r = V3.len(p); if (r < 1e-6) return;
+    let a = Math.asin(p[1] / r), b = Math.atan2(p[0], p[2]);
+    if (dy < 0) a -= 0.02; else if (dy > 0) a += 0.02;
+    if (dx < 0) b += 0.05; else if (dx > 0) b -= 0.05;
+    a = clamp(a, -PI05 + 0.01, PI05 - 0.01);
+    this.position = [r*Math.cos(a)*Math.sin(b), r*Math.sin(a), r*Math.cos(a)*Math.cos(b)]; }
+  onScroll(dy) { const p = this.position; let r = V3.len(p); const a = Math.asin(p[1] / r), b = Math.atan2(p[0], p[2]);
+    r += dy > 0 ? -1 : 1; if (r < 1) r = 1;
+    this.position = [r*Math.cos(a)*Math.sin(b), r*Math.sin(a), r*Math.cos(a)*Math.cos(b)]; }
+}
+
+/* ---------------- material presets from material.h ---------------- */
+const MAT = {
+  PHONG_BLUE: { 'material.shininess': 100, 'material.Ka': [.3,.5,.9], 'material.Kd': [.3,.5,.9], 'material.Ks': [.8,.8,.8], 'material.effect': 0 },
+  PHONG_ORANGE: { 'material.shininess': 100, 'material.Ka': [.9,.5,.3], 'material.Kd': [.9,.5,.3], 'material.Ks': [.8,.8,.8], 'material.effect': 0 },
+  PHONG_WHITE: { 'material.shininess': 100, 'material.Ka': [1,1,1], 'material.Kd': [1,1,1], 'material.Ks': [1,1,1], 'material.effect': 0 },
+  PBR_PHONG: { 'material.rough': .3, 'material.metal': 0, 'material.color': [1,0,0], 'material.shininess': 100, 'material.Ka': [0,0,0], 'material.Kd': [1,0,0], 'material.Ks': [1,0,0], 'material.effect': 0 },
+  DISCARD: { 'material.rough': .3, 'material.metal': 0, 'material.color': [0,1,0], 'material.shininess': 100, 'material.Ka': [0,0,0], 'material.Kd': [0,1,0], 'material.Ks': [0,1,0], 'material.effect': 1 },
+  CARTOON: { 'material.rough': .3, 'material.metal': 0, 'material.color': [0,0,1], 'material.shininess': 100, 'material.Ka': [0,0,0], 'material.Kd': [0,0,1], 'material.Ks': [0,0,1], 'material.effect': 2 },
+  CHECKER: { 'material.rough': .3, 'material.metal': 0, 'material.color': [.3,.3,.3], 'material.shininess': 100, 'material.Ka': [0,0,0], 'material.Kd': [.3,.3,.3], 'material.Ks': [.3,.3,.3], 'material.effect': 3 },
+};
+MAT.PLANE = MAT.PHONG_BLUE; MAT.OBJECT = MAT.PHONG_ORANGE;
+
+/* ---------------- GL plumbing ---------------- */
+let gl, canvas, ext = {};
+const cache = { text: {}, mesh: {}, prog: {} };
+const fetchText = async n => cache.text[n] ??= await (await fetch(BASE + 'shaders/' + n)).text();
+
+function toES(src) {
+  // the framework stores each shader as a C++ raw string literal: R"( ... )"
+  const a = src.indexOf('R"('), b = src.lastIndexOf(')"');
+  let s = a >= 0 && b > a ? src.slice(a + 3, b) : src;
+  const vi = s.indexOf('#version'); if (vi >= 0) s = s.slice(vi); // drop the file header comment
+  const bindings = {}, defaults = {};
+  s = s.replace(/layout\s*\(\s*binding\s*=\s*(\d+)\s*\)\s*uniform\s+(\w+)\s+(\w+)\s*;/g, (m, u, t, n) => { bindings[n] = +u; return `uniform ${t} ${n};`; });
+  s = s.replace(/uniform\s+(\w+)\s+(\w+)\s*=\s*([^;]+);/g, (m, t, n, v) => { defaults[n] = { t, v: v.trim() }; return `uniform ${t} ${n};`; });
+  s = s.replace(/(\b\d+\.\d*|\B\.\d+|\b\d+)[fF]\b/g, '$1');
+  s = s.trim().replace(/^#version\s+\d+(\s+core)?/, '#version 300 es\nprecision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp samplerCube;');
+  return { s, bindings, defaults };
+}
+function compile(type, src, name) {
+  const sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(name + ': ' + gl.getShaderInfoLog(sh));
+  return sh;
+}
+class Program {
+  constructor(vsName, fsName, vsSrc, fsSrc) {
+    const v = toES(vsSrc), f = toES(fsSrc);
+    let fs = f.s;
+    if (!/\bout\s+(highp\s+|mediump\s+)?vec[34]\b/.test(fs) && !/layout\s*\(\s*location/.test(fs)) fs = fs.replace(/void\s+main/, 'void main_unused(){}\nvoid main'); // depth-only shader
+    const p = this.h = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, v.s, vsName)); gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs, fsName));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(fsName + ' link: ' + gl.getProgramInfoLog(p));
+    this.u = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(p, i); const nm = info.name.replace(/\[0\]$/, '');
+      this.u[nm] = { loc: gl.getUniformLocation(p, info.name), type: info.type };
+      if (info.name.endsWith('[0]')) this.u[info.name] = this.u[nm]; }
+    gl.useProgram(p);
+    for (const [nm, unit] of Object.entries({ ...v.bindings, ...f.bindings })) this.set(nm, unit);
+    for (const [nm, d] of Object.entries({ ...v.defaults, ...f.defaults })) {
+      const val = d.v === 'true' ? 1 : d.v === 'false' ? 0 : parseFloat(d.v); this.set(nm, val); }
+  }
+  use() { gl.useProgram(this.h); }
+  set(name, v) {
+    const u = this.u[name]; if (!u) return;
+    const a = typeof v === 'number' || typeof v === 'boolean' ? [+v] : v;
+    switch (u.type) {
+      case gl.FLOAT: gl.uniform1f(u.loc, a[0]); break;
+      case gl.FLOAT_VEC2: gl.uniform2fv(u.loc, a); break;
+      case gl.FLOAT_VEC3: gl.uniform3fv(u.loc, a); break;
+      case gl.FLOAT_VEC4: gl.uniform4fv(u.loc, a); break;
+      case gl.FLOAT_MAT4: gl.uniformMatrix4fv(u.loc, false, a); break;
+      case gl.FLOAT_MAT3: gl.uniformMatrix3fv(u.loc, false, a); break;
+      case gl.UNSIGNED_INT: gl.uniform1ui(u.loc, a[0]); break;
+      default: gl.uniform1i(u.loc, Math.round(a[0]));
+    }
+  }
+  setAll(obj) { for (const k in obj) this.set(k, obj[k]); }
+}
+async function prog(vs, fs) {
+  const key = vs + '|' + fs; if (cache.prog[key]) return cache.prog[key];
+  const [a, b] = await Promise.all([fetchText(vs), fetchText(fs)]);
+  return cache.prog[key] = new Program(vs, fs, a, b);
+}
+async function mesh(name) {
+  if (cache.mesh[name]) return cache.mesh[name];
+  const buf = await fetchBin(BASE + 'mesh/' + name + '.bin');
+  const h = new Uint32Array(buf, 0, 5); let off = 20;
+  const take = (n, T) => { const a = new T(buf, off, n); off += n * 4; return a; };
+  const idx = take(h[0], Uint32Array), pts = take(h[1], Float32Array), nrm = take(h[2], Float32Array),
+    uv = take(h[3], Float32Array), tan = take(h[4], Float32Array);
+  const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+  const attr = (loc, data, size) => { if (!data.length) return; const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0); };
+  attr(0, pts, 3); attr(1, nrm, 3); attr(2, uv, 2); attr(3, tan, 4);
+  const eb = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, eb); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
+  gl.bindVertexArray(null);
+  return cache.mesh[name] = { vao, count: h[0] };
+}
+function draw(m) { gl.bindVertexArray(m.vao); gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0); }
+
+function tex2D(w, h, internal, format, type, filter = gl.LINEAR) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, format, type, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+// cg::FBO equivalents: 'rgba8' (Texture), 'hdr' (TextureHDR), 'gbuffer' (Deferred, 5 targets)
+function makeFBO(kind, w, h) {
+  const f = { kind, w, h, fb: gl.createFramebuffer(), tex: [] }; gl.bindFramebuffer(gl.FRAMEBUFFER, f.fb);
+  const n = kind === 'gbuffer' ? 5 : 1;
+  for (let i = 0; i < n; i++) {
+    const t = kind === 'rgba8' ? tex2D(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)
+      : tex2D(w, h, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT, kind === 'gbuffer' ? gl.NEAREST : gl.LINEAR);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, t, 0); f.tex.push(t); }
+  gl.drawBuffers(f.tex.map((_, i) => gl.COLOR_ATTACHMENT0 + i));
+  const rb = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+  f.rb = rb; gl.bindFramebuffer(gl.FRAMEBUFFER, null); return f;
+}
+function freeFBO(f) { if (!f) return; f.tex.forEach(t => gl.deleteTexture(t)); gl.deleteRenderbuffer(f.rb); gl.deleteFramebuffer(f.fb); }
+function bindTex(unit, t, target = gl.TEXTURE_2D) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(target, t); }
+async function imageTex(name) {
+  const blob = await (await fetch(BASE + name)).blob();
+  const bmp = await createImageBitmap(blob, { imageOrientation: 'flipY' }); // stbi_set_flip_vertically_on_load(1)
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, bmp); gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  return t;
+}
+async function fetchBin(u) { const t = (await (await fetch(u + '.txt')).text()).trim(); const b = atob(t); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a.buffer; }
+let pisaTex = null;
+async function pisaCube() {
+  if (pisaTex) return pisaTex;
+  const buf = await fetchBin(BASE + 'pisa.bin'); const S = 256, face = S * S * 3;
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_CUBE_MAP, t); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  for (let i = 0; i < 6; i++) gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, gl.RGB16F, S, S, 0, gl.RGB, gl.HALF_FLOAT, new Uint16Array(buf, i * face * 2, face));
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_CUBE_MAP, k, v);
+  return pisaTex = t;
+}
+// one cg::Pass: clear, depth state, per-pass uniforms, draw objects
+function pass({ program, clear, depth, cameras, lights, objects = [], uniforms = {}, w, h, index = 0 }) {
+  gl.viewport(0, 0, w, h);
+  if (clear) { gl.clearColor(...clear); gl.clear(gl.COLOR_BUFFER_BIT); }
+  if (depth) { gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT); } else gl.disable(gl.DEPTH_TEST);
+  program.use();
+  program.set('Pass', index); program.set('iTime', now()); program.set('iResolution', [w, h]);
+  (lights || []).forEach((l, i) => l.setUniforms(program, i));
+  let V = M4.I(), P = M4.I();
+  if (cameras) { program.set('camera.position', cameras.position); V = cameras.view(); P = cameras.proj(w / h); }
+  program.set('V', V); program.set('P', P); program.setAll(uniforms);
+  for (const o of objects) { if (o.visible === false) continue; if (o.mat) program.setAll(o.mat); program.set('M', o.M || M4.I()); draw(o.mesh); }
+}
+let t0 = performance.now(); const now = () => (performance.now() - t0) / 1000;
+
+/* ---------------- the nine demos ---------------- */
+const DEMOS = [];
+const quadPass = (fs) => prog('Shader.vert.glsl', fs);
+
+DEMOS.push({ id: 'a1', title: 'Tabs', label: 'Animated tab shader', hint: 'Tab or ← → cycles tabs · click the dots · move the mouse on tab 3 · R resets',
+  async init(s) { s.p = await quadPass('A1Tabs.frag.glsl'); s.q = await mesh('quad'); s.tab = 0; s.mouse = [.5, .5]; },
+  frame(s, w, h) { pass({ program: s.p, objects: [{ mesh: s.q }], w, h, uniforms: { ActiveTab: s.tab, iMouse: s.mouse } }); },
+  key(s, k) { if (k === 'Tab' || k === 'ArrowRight') s.tab = (s.tab + 1) % 3; else if (k === 'ArrowLeft') s.tab = (s.tab + 2) % 3; else if (k === 'r') { s.tab = 0; s.mouse = [.5, .5]; } else return false; return true; },
+  move(s, e) { s.mouse = [clamp(e.u, 0, 1), clamp(1 - e.v, 0, 1)]; },
+  click(s, e) { const x = e.x, y = e.h - e.y, mid = e.w / 2; [mid - 28, mid, mid + 28].forEach((cx, i) => { if (Math.hypot(x - cx, y - 28) <= 12 * e.dpr) s.tab = i; }); },
+  buttons: s => [['Next tab', () => s.tab = (s.tab + 1) % 3]] });
+
+DEMOS.push({ id: 'a2', title: 'Ray Casting', label: 'DDA ray-casting maze', hint: 'W A S D to move · drag to turn · R resets',
+  async init(s) { s.p = await quadPass('A2RayCast.frag.glsl'); s.q = await mesh('quad'); this.reset(s); s.keys = {}; },
+  reset(s) { Object.assign(s, { posX: 8, posY: 8, dirX: 0, dirY: -1, planeX: .66, planeY: 0 }); },
+  wall(x, y) { const map = [
+    '1111111111111111','1000000000000001','1000000000000001','1000000000000001','1000222003330001','1000200000030001','1000200000030001','1000000000000001',
+    '1000000000000001','1000500000040001','1000500000040001','1000555004440001','1000000000000001','1000000000000001','1000000000000001','1111111111111111'];
+    const mx = Math.floor(x), my = Math.floor(y); if (mx < 0 || mx >= 16 || my < 0 || my >= 16) return true; return map[my][mx] !== '0'; },
+  tryMove(s, nx, ny) { const pad = .15; if (!this.wall(nx + (nx > s.posX ? pad : -pad), s.posY)) s.posX = nx; if (!this.wall(s.posX, ny + (ny > s.posY ? pad : -pad))) s.posY = ny; },
+  rotate(s, a) { const c = Math.cos(a), sn = Math.sin(a), dx = s.dirX, px = s.planeX;
+    s.dirX = dx * c - s.dirY * sn; s.dirY = dx * sn + s.dirY * c; s.planeX = px * c - s.planeY * sn; s.planeY = px * sn + s.planeY * c; },
+  frame(s, w, h, dt) {
+    const k = s.keys, sp = 3.0 * dt;   // the desktop build steps 0.25 per key repeat; here movement is continuous
+    if (k.w) this.tryMove(s, s.posX + s.dirX * sp, s.posY + s.dirY * sp);
+    if (k.s) this.tryMove(s, s.posX - s.dirX * sp, s.posY - s.dirY * sp);
+    if (k.a) this.tryMove(s, s.posX + s.dirY * sp, s.posY - s.dirX * sp);
+    if (k.d) this.tryMove(s, s.posX - s.dirY * sp, s.posY + s.dirX * sp);
+    pass({ program: s.p, objects: [{ mesh: s.q }], w, h, uniforms: { ActiveTab: 0, IsDemoWindow: 1, playerPos: [s.posX, s.posY], playerDir: [s.dirX, s.dirY], playerPlane: [s.planeX, s.planeY] } }); },
+  keydown(s, k) { if ('wasd'.includes(k)) { s.keys[k] = true; return true; } if (k === 'r') { this.reset(s); return true; } return false; },
+  keyup(s, k) { s.keys[k] = false; },
+  drag(s, e) { if (e.dx) this.rotate(s, -e.dx * 0.0030); },
+  buttons: s => [['Forward', () => DEMOS[1].tryMove(s, s.posX + s.dirX * .5, s.posY + s.dirY * .5)], ['Turn', () => DEMOS[1].rotate(s, -0.4)], ['Reset', () => DEMOS[1].reset(s)]] });
+
+DEMOS.push({ id: 'a3', title: 'Ray Tracing', label: 'Ray-traced Sun, Earth and Moon', hint: 'A passive demo: the closest-hit ray tracer animates on its own',
+  async init(s) { s.p = await quadPass('A3RayTrace.frag.glsl'); s.q = await mesh('quad'); },
+  frame(s, w, h) { pass({ program: s.p, objects: [{ mesh: s.q }], w, h, uniforms: { ActiveTab: 0, IsDemoWindow: 1, iMouse: [.5, .5] } }); } });
+
+DEMOS.push({ id: 'a4', title: 'Blinn-Phong', label: 'Blinn-Phong lighting', hint: 'Drag to orbit · Shift+drag moves the light · wheel zooms · I / K intensity · C colour · R resets',
+  async init(s) { s.p = await prog('A4Viewer.vert.glsl', 'A4Viewer.frag.glsl');
+    s.m = { plane: await mesh('plane'), torus: await mesh('torus'), cube: await mesh('cube'), sphere: await mesh('sphere') }; this.reset(s); },
+  reset(s) { Object.assign(s, { lightAngle: 0, lightDist: 6, lightH: 3, color: [1,1,1], intensity: 1, spin: 0, cam: new Camera('orbit', [0,3,7], [0,0,0], 45) }); },
+  frame(s, w, h, dt) {
+    s.spin += dt * 30; s.lightAngle = (s.lightAngle + dt * 25) % 360;
+    const a = rad(s.lightAngle), lp = [Math.sin(a) * s.lightDist, s.lightH, Math.cos(a) * s.lightDist];
+    const spin = rad(s.spin), pulse = .75 + .25 * Math.sin(now() * 2), hr = Math.sqrt(16 - 6.25), ey = 2.5;
+    pass({ program: s.p, clear: [0,0,0,1], depth: true, cameras: s.cam, w, h,
+      uniforms: { 'light.position': lp, 'light.color': s.color, 'light.intensity': s.intensity },
+      objects: [
+        { mesh: s.m.plane, mat: MAT.PLANE, M: M4.T(0, -1.1, 0) },
+        { mesh: s.m.torus, mat: MAT.OBJECT, M: M4.mul(M4.T(-hr, ey, 0), M4.R(spin, 0, 1, 0)) },
+        { mesh: s.m.cube, mat: MAT.PHONG_WHITE, M: M4.mul(M4.T(0, ey, hr), M4.R(-spin * .7, 1, 1, .25)) },
+        { mesh: s.m.sphere, mat: MAT.OBJECT, M: M4.chain(M4.R(spin * 1.2, 0, 1, 0), M4.T(hr, ey, 0), M4.S(pulse, pulse, pulse)) }] }); },
+  key(s, k) { if (k === 'i') s.intensity = clamp(s.intensity + .1, .1, 5); else if (k === 'k') s.intensity = clamp(s.intensity - .1, .1, 5);
+    else if (k === 'c') s.color = s.color[2] === 1 && s.color[1] === 1 ? [1,.9,.7] : s.color[1] === .9 ? [.6,.8,1] : [1,1,1]; else if (k === 'r') this.reset(s); else return false; return true; },
+  drag(s, e) { if (e.shift) { s.lightAngle += e.dx * .25; s.lightH = clamp(s.lightH - e.dy * .01, .5, 10); } else s.cam.onCursor(e.dx, e.dy); },
+  wheel(s, e) { if (e.shift) s.lightDist = clamp(s.lightDist - e.dy * .25, 1.5, 20); else s.cam.onScroll(e.dy); },
+  buttons: s => [['Light colour', () => DEMOS[3].key(s, 'c')], ['Brighter', () => DEMOS[3].key(s, 'i')], ['Reset', () => DEMOS[3].reset(s)]] });
+
+DEMOS.push({ id: 'a5', title: 'Environment Mapping', label: 'Reflection and refraction', hint: 'Drag to orbit · wheel zooms · O cycles sphere / torus / cube · [ ] reflection · ; \' eta · R resets',
+  async init(s) { s.p = await prog('A5Viewer.vert.glsl', 'A5Viewer.frag.glsl');
+    s.sky = await mesh('skybox'); s.objs = [await mesh('sphere'), await mesh('torus'), await mesh('cube')]; this.reset(s); },
+  reset(s) { Object.assign(s, { refl: .9, eta: .94, active: 0, cam: new Camera('orbit', [0,3,7], [0,0,0], 45) }); },
+  frame(s, w, h) {
+    pass({ program: s.p, clear: [0,0,0,1], depth: false, cameras: s.cam, w, h, index: 0, objects: [{ mesh: s.sky, mat: MAT.OBJECT, M: M4.S(25,25,25) }] });
+    pass({ program: s.p, depth: true, cameras: s.cam, w, h, index: 1,
+      objects: [{ mesh: s.objs[s.active], mat: { 'material.color': [.5,.5,.5], 'material.reflectionFactor': s.refl, 'material.eta': s.eta, 'material.effect': 0 } }] }); },
+  key(s, k) { if (k === 'o') s.active = (s.active + 1) % 3; else if (k === '[' || k === ']') s.refl = clamp(s.refl + (k === ']' ? .05 : -.05), 0, 1);
+    else if (k === ';' || k === "'") s.eta = clamp(s.eta + (k === "'" ? .02 : -.02), .5, 1.5); else if (k === 'r') this.reset(s); else return false; return true; },
+  drag(s, e) { s.cam.onCursor(e.dx, e.dy); },
+  wheel(s, e) { if (e.ctrl) s.refl = clamp(s.refl + (e.dy > 0 ? .05 : -.05), 0, 1); else if (e.alt) s.eta = clamp(s.eta + (e.dy > 0 ? .02 : -.02), .5, 1.5); else s.cam.onScroll(e.dy); },
+  buttons: s => [['Next object', () => s.active = (s.active + 1) % 3], ['More refraction', () => s.refl = clamp(s.refl - .1, 0, 1)], ['More reflection', () => s.refl = clamp(s.refl + .1, 0, 1)]] });
+
+DEMOS.push({ id: 'a8', title: 'Night Scene', label: 'PBR, toon, discard and fog', hint: 'Drag to orbit · Shift+drag moves the light · wheel zooms · Alt+wheel fog far · [ ] fog near · W / O walk or orbit · R resets',
+  async init(s) { s.sky = await prog('A8Skybox.vert.glsl', 'A8Skybox.frag.glsl'); s.p = await prog('A8Scene.vert.glsl', 'A8Scene.frag.glsl');
+    s.m = { box: await mesh('skybox'), plane: await mesh('plane'), sphere: await mesh('sphere'), cube: await mesh('cube'), teapot: await mesh('teapot') }; this.reset(s); },
+  reset(s) { Object.assign(s, { fogMin: 2, fogMax: 16, cam: new Camera('orbit', [6,1,4], [0,1,0], 75), light: new Light([4,3,4], [[1,1,1],[1,1,1],[1,1,1]]) }); },
+  frame(s, w, h) {
+    gl.clearColor(.08,.09,.16,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    pass({ program: s.sky, depth: false, cameras: s.cam, w, h, index: 0, uniforms: { useCubemap: 0, skyboxTex: 0 }, objects: [{ mesh: s.m.box, mat: MAT.OBJECT }] });
+    pass({ program: s.p, depth: true, cameras: s.cam, lights: [s.light], w, h, index: 1,
+      uniforms: { 'fog.minDist': s.fogMin, 'fog.maxDist': s.fogMax, 'fog.color': [.05,.07,.12,1] },
+      objects: [
+        { mesh: s.m.plane, mat: MAT.CHECKER, M: M4.mul(M4.S(3,1,3), M4.T(0,-1,0)) },
+        { mesh: s.m.sphere, mat: MAT.PBR_PHONG, M: M4.T(3,0,0) },
+        { mesh: s.m.cube, mat: MAT.DISCARD, M: M4.T(-3,0,0) },
+        { mesh: s.m.teapot, mat: MAT.CARTOON, M: M4.T(0,-.5,0) }] }); },
+  key(s, k) { if (k === 'w') s.cam.type = 'walk'; else if (k === 'o') s.cam.type = 'orbit'; else if (k === '[') s.fogMin = clamp(s.fogMin - .25, .1, s.fogMax - .5);
+    else if (k === ']') s.fogMin = clamp(s.fogMin + .25, .1, s.fogMax - .5); else if (k === 'r') this.reset(s); else return false; return true; },
+  drag(s, e) { if (e.shift) s.light.onCursor(e.dx, e.dy); else s.cam.onCursor(e.dx, e.dy); },
+  wheel(s, e) { if (e.alt) s.fogMax = clamp(s.fogMax + (e.dy > 0 ? -.5 : .5), s.fogMin + .5, 80); else if (e.shift) s.light.onScroll(e.dy); else s.cam.onScroll(e.dy); },
+  buttons: s => [['Thicker fog', () => s.fogMax = clamp(s.fogMax - 3, s.fogMin + .5, 80)], ['Clearer', () => s.fogMax = clamp(s.fogMax + 3, s.fogMin + .5, 80)], ['Reset', () => DEMOS[5].reset(s)]] });
+
+DEMOS.push({ id: 'a9', title: 'NPR Cartoon', label: 'Six-pass cartoon renderer', hint: 'Drag to orbit · Shift+drag moves the light · 1 / 2 blur on / off · 3 / 4 edges on / off · [ ] toon levels · A animates · Alt+wheel edge threshold · Ctrl+wheel outline · R resets',
+  async init(s) {
+    s.phong = await prog('A9ViewSpaceTransform.vert.glsl', 'A9Phong.frag.glsl'); s.cartoon = await prog('A9ViewSpaceTransform.vert.glsl', 'A9Cartoon.frag.glsl');
+    s.blurV = await prog('A9PassThrough.vert.glsl', 'A9BlurFilterV.frag.glsl'); s.blurH = await prog('A9PassThrough.vert.glsl', 'A9BlurFilterH.frag.glsl');
+    s.edge = await prog('A9PassThrough.vert.glsl', 'A9EdgeFilter.frag.glsl'); s.comp = await prog('A9PassThrough.vert.glsl', 'A9Composite.frag.glsl');
+    s.m = { plane: await mesh('plane'), teapot: await mesh('teapot'), quad: await mesh('quad') }; s.fbo = []; this.reset(s); },
+  reset(s) { Object.assign(s, { blur: true, edgeOn: true, thr: .12, alpha: 1, levels: 4, anim: false,
+    cam: new Camera('orbit', [0,2,7], [0,0,0], 60), light: new Light([4.5,5,4.5], [[.22,.22,.22],[1,1,1],[1,1,1]]) }); },
+  frame(s, w, h) {
+    if (!s.fbo.length || s.fbo[0].w !== w || s.fbo[0].h !== h) { s.fbo.forEach(freeFBO); s.fbo = [0,1,2,3,4].map(() => makeFBO('rgba8', w, h)); }
+    const ground = { 'material.rough': .3, 'material.metal': 0, 'material.color': [.31,.47,.82], 'material.Ka': [.2,.3,.58], 'material.Kd': [.31,.47,.82], 'material.Ks': [.07,.1,.18], 'material.shininess': 20, 'material.effect': 0 };
+    const pot = { 'material.rough': .25, 'material.metal': 0, 'material.color': [.78,.47,.28], 'material.Ka': [.32,.19,.1], 'material.Kd': [.78,.47,.28], 'material.Ks': [1,.9,.72], 'material.shininess': 72, 'material.effect': 0 };
+    let potM = M4.mul(M4.T(0,-.5,0), M4.S(1.08,1.08,1.08)); if (s.anim) potM = M4.mul(potM, M4.R(now() * .8, 0, 1, 0));
+    const scene = [{ mesh: s.m.plane, mat: ground, M: M4.mul(M4.T(0,-1,0), M4.S(1.12,1,1.12)) }, { mesh: s.m.teapot, mat: pot, M: potM }];
+    const tgt = i => { gl.bindFramebuffer(gl.FRAMEBUFFER, s.fbo[i].fb); };
+    const texAll = () => s.fbo.forEach((f, i) => bindTex(i, f.tex[0]));
+    tgt(0); pass({ program: s.phong, clear: [.94,.94,.94,1], depth: true, cameras: s.cam, lights: [s.light], objects: scene, w, h, index: 0 });
+    tgt(1); texAll(); pass({ program: s.blurV, depth: false, objects: [{ mesh: s.m.quad }], w, h, index: 1, uniforms: { UseBlur: s.blur } });
+    tgt(2); texAll(); pass({ program: s.blurH, depth: false, objects: [{ mesh: s.m.quad }], w, h, index: 2, uniforms: { UseBlur: s.blur } });
+    tgt(3); texAll(); pass({ program: s.edge, depth: false, objects: [{ mesh: s.m.quad }], w, h, index: 3, uniforms: { UseEdge: s.edgeOn, EdgeThreshold: s.thr } });
+    tgt(4); pass({ program: s.cartoon, clear: [.94,.94,.94,1], depth: true, cameras: s.cam, lights: [s.light], objects: scene, w, h, index: 4, uniforms: { ToonLevels: s.levels } });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); texAll();
+    pass({ program: s.comp, clear: [0,0,0,1], depth: false, objects: [{ mesh: s.m.quad }], w, h, index: 5, uniforms: { UseBlur: s.blur, UseEdge: s.edgeOn, AlphaFactor: s.alpha } }); },
+  key(s, k) { if (k === '1') s.blur = true; else if (k === '2') s.blur = false; else if (k === '3') s.edgeOn = true; else if (k === '4') s.edgeOn = false;
+    else if (k === 'w') s.cam.type = 'walk'; else if (k === 'o') s.cam.type = 'orbit'; else if (k === 'a') s.anim = !s.anim;
+    else if (k === '[') s.levels = Math.max(2, s.levels - 1); else if (k === ']') s.levels = Math.min(8, s.levels + 1); else if (k === 'r') this.reset(s); else return false; return true; },
+  drag(s, e) { if (e.shift) s.light.onCursor(e.dx, e.dy); else s.cam.onCursor(e.dx, e.dy); },
+  wheel(s, e) { if (e.alt) s.thr = clamp(s.thr + (e.dy > 0 ? .01 : -.01), .01, 2); else if (e.ctrl) s.alpha = clamp(s.alpha + (e.dy > 0 ? .05 : -.05), 0, 1.5); else if (e.shift) s.light.onScroll(e.dy); else s.cam.onScroll(e.dy); },
+  buttons: s => [['Outlines', () => s.edgeOn = !s.edgeOn], ['Toon levels', () => s.levels = s.levels >= 8 ? 2 : s.levels + 1], ['Spin', () => s.anim = !s.anim]] });
+
+DEMOS.push({ id: 'a10', title: 'Portal', label: 'Projected portal over an HDR sky', hint: 'Click to place the portal · drag to look · wheel walks · Alt+wheel size · Ctrl+wheel blend · W / O walk or orbit · R resets',
+  async init(s) { s.ptex = await prog('A10PortalTexture.vert.glsl', 'A10PortalTexture.frag.glsl'); s.sky = await prog('A10CubeSkybox.vert.glsl', 'A10CubeSkybox.frag.glsl');
+    s.portal = await prog('A10PortalProjected.vert.glsl', 'A10PortalProjected.frag.glsl');
+    s.m = { quad: await mesh('quad'), box: await mesh('skybox') }; s.cube = await pisaCube(); s.fbo = makeFBO('rgba8', 384, 384); this.reset(s); },
+  reset(s) { Object.assign(s, { blend: .82, scale: 1.6, pos: [0,1.35,-6], cam: new Camera('walk', [-20,1.35,6.5], [0,1.15,0], 65, .1, 250) }); },
+  presentation(s) {
+    const c = s.cam, fwd = V3.norm(V3.sub(c.target, c.position)), to = V3.sub(s.pos, c.position), d = V3.len(to);
+    const out = { center: s.pos, scale: s.scale, blend: s.blend }; if (d <= 1e-4) return out;
+    const facing = V3.dot(fwd, V3.scale(to, 1 / d)), start = s.scale * 3 + 1;
+    if (d < start && facing > .7) { const f = clamp((start - d) / Math.max(start, .001), 0, 1);
+      out.center = V3.mix(s.pos, V3.add(c.position, V3.scale(fwd, .95 + s.scale * .35)), f); out.scale = s.scale * (1 + f * 2.2); out.blend = clamp(s.blend + f * .12, 0, 1); }
+    return out; },
+  frame(s, w, h) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, s.fbo.fb); gl.disable(gl.BLEND);
+    pass({ program: s.ptex, clear: [0,0,0,0], depth: false, objects: [{ mesh: s.m.quad }], w: 384, h: 384, index: 0 });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    bindTex(0, s.cube, gl.TEXTURE_CUBE_MAP); bindTex(1, s.fbo.tex[0]);
+    gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    pass({ program: s.sky, depth: true, cameras: s.cam, w, h, index: 2, uniforms: { Exposure: 1.15 }, objects: [{ mesh: s.m.box, mat: MAT.OBJECT }] });
+    const pr = this.presentation(s);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    pass({ program: s.portal, depth: false, cameras: s.cam, w, h, index: 3, uniforms: { PortalBlend: pr.blend, PortalScale: pr.scale }, objects: [{ mesh: s.m.quad, mat: MAT.PHONG_WHITE, M: M4.T(...pr.center) }] });
+    gl.disable(gl.BLEND); },
+  // the desktop build reads the depth of a ground and back-wall pass; the same two planes are intersected analytically here
+  click(s, e) {
+    const c = s.cam, Vm = c.view(), Pm = c.proj(e.w / e.h), inv = M4.inv(M4.mul(Pm, Vm));
+    const nx = 2 * e.x / e.w - 1, ny = 1 - 2 * e.y / e.h;
+    const n = M4.xf(inv, [nx, ny, -1, 1]), f = M4.xf(inv, [nx, ny, 1, 1]);
+    const o = c.position, dir = V3.norm(V3.sub(f.slice(0,3).map((v,i) => v / f[3]), n.slice(0,3).map((v,i) => v / n[3])));
+    let best = null;
+    if (Math.abs(dir[1]) > 1e-6) { const t = (-1.1 - o[1]) / dir[1]; const p = V3.add(o, V3.scale(dir, t)); if (t > 0 && Math.abs(p[0]) <= 112 && Math.abs(p[2]) <= 112) best = { t, p }; }
+    if (Math.abs(dir[2]) > 1e-6) { const t = (-24 - o[2]) / dir[2]; const p = V3.add(o, V3.scale(dir, t)); if (t > 0 && Math.abs(p[0]) <= 160 && Math.abs(p[1] - 7.5) <= 72 && (!best || t < best.t)) best = { t, p }; }
+    const p = best ? best.p : V3.add(o, V3.scale(dir, 12)); p[1] = Math.max(p[1], s.scale * .95); s.pos = p; },
+  key(s, k) { if (k === 'w') s.cam.type = 'walk'; else if (k === 'o') s.cam.type = 'orbit'; else if (k === 'r') this.reset(s); else return false; return true; },
+  drag(s, e) { s.cam.onCursor(e.dx, e.dy); },
+  wheel(s, e) { if (e.alt) { s.scale = clamp(s.scale - e.dy * .08 / Math.abs(e.dy || 1), .45, 2.4); s.pos[1] = Math.max(s.pos[1], s.scale * .95); }
+    else if (e.ctrl) s.blend = clamp(s.blend - e.dy * .05 / Math.abs(e.dy || 1), .2, 1); else s.cam.onScroll(e.dy); },
+  buttons: s => [['Walk forward', () => { s.cam.onScroll(1); s.cam.onScroll(1); }], ['Bigger portal', () => s.scale = clamp(s.scale + .2, .45, 2.4)], ['Reset', () => DEMOS[7].reset(s)]] });
+
+DEMOS.push({ id: 'a11', title: 'Deferred Ogres', label: 'Deferred shading, normal maps, HDR', hint: 'Drag to orbit · Shift+drag moves the light · wheel zooms · 1–6 switch the final image and G-buffer views · [ ] exposure · R resets',
+  async init(s) { if (!ext.cbf) throw new Error('This browser cannot render to floating-point targets (EXT_color_buffer_float), which the deferred G-buffer needs.');
+    s.g = await prog('A11GBuffer.vert.glsl', 'A11GBuffer.frag.glsl'); s.light = await prog('Shader.vert.glsl', 'A11DeferredLighting.frag.glsl'); s.tone = await prog('Shader.vert.glsl', 'A11ToneMap.frag.glsl');
+    s.m = { ogre: await mesh('ogre'), quad: await mesh('quad') }; s.diffuse = await imageTex('ogre_diffuse.jpg'); s.normal = await imageTex('ogre_normal.png'); this.reset(s); },
+  reset(s) { Object.assign(s, { exposure: 1.15, mode: 1, cam: new Camera('orbit', [0,7.5,18], [0,0,0], 50, .1, 250), lt: new Light([6,8,6], [[.16,.16,.18],[2.5,2.35,2.1],[1.2,1.18,1.12]]) }); },
+  frame(s, w, h) {
+    if (!s.gb || s.gb.w !== w || s.gb.h !== h) { freeFBO(s.gb); freeFBO(s.hdr); s.gb = makeFBO('gbuffer', w, h); s.hdr = makeFBO('hdr', w, h); }
+    const ogres = []; for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) ogres.push({ mesh: s.m.ogre, mat: MAT.OBJECT, M: M4.mul(M4.T(-8.7 + c * 4.35, 0, -12.45 + r * 4.15), M4.S(1.45,1.45,1.45)) });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, s.gb.fb);
+    pass({ program: s.g, clear: [0,0,0,1], depth: true, cameras: s.cam, lights: [s.lt], objects: ogres, w, h, index: 0 });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, s.hdr.fb);
+    s.gb.tex.forEach((t, i) => bindTex(i, t)); bindTex(5, s.diffuse); bindTex(6, s.normal);
+    pass({ program: s.light, clear: [.5,.5,.5,1], depth: false, cameras: s.cam, lights: [s.lt], w, h, index: 1,
+      objects: [{ mesh: s.m.quad, mat: { 'material.Ka': [.16,.16,.16], 'material.Kd': [1,1,1], 'material.Ks': [.42,.42,.42], 'material.shininess': 40 } }] });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); bindTex(7, s.hdr.tex[0]);
+    pass({ program: s.tone, clear: [.5,.5,.5,1], depth: false, w, h, index: 2, uniforms: { Exposure: s.exposure, RenderMode: s.mode }, objects: [{ mesh: s.m.quad }] }); },
+  key(s, k) { if ('123456'.includes(k) && k.length === 1) s.mode = +k; else if (k === '-' || k === '[') s.exposure = clamp(s.exposure - .1, .4, 3);
+    else if (k === '=' || k === '+' || k === ']') s.exposure = clamp(s.exposure + .1, .4, 3); else if (k === 'r') this.reset(s); else return false; return true; },
+  drag(s, e) { if (e.shift) s.lt.onCursor(e.dx, e.dy); else s.cam.onCursor(e.dx, e.dy); },
+  wheel(s, e) { if (e.shift) s.lt.onScroll(e.dy); else s.cam.onScroll(e.dy); },
+  buttons: s => [['Lit', () => s.mode = 1], ['Light dir', () => s.mode = 2], ['UVs', () => s.mode = 4], ['Normal map', () => s.mode = 6]] });
+
+/* ---------------- viewer UI ---------------- */
+let dlg, active = null, state = null, raf = 0, last = 0, running = false;
+function ensureGL() {
+  if (gl) return true;
+  gl = canvas.getContext('webgl2', { antialias: true, preserveDrawingBuffer: false });
+  if (!gl) return false;
+  ext.cbf = gl.getExtension('EXT_color_buffer_float'); gl.getExtension('OES_texture_float_linear');
+  return true;
+}
+function size() { const dpr = Math.min(window.devicePixelRatio || 1, 2), r = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; } return [w, h, dpr]; }
+function loop(t) {
+  if (!running) return;
+  const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
+  const [w, h] = size();
+  try { active.frame(state, w, h, dt); } catch (e) { fail(e); return; }
+  raf = requestAnimationFrame(loop);
+}
+function fail(e) { running = false; console.error(e); dlg.querySelector('[data-lab-status]').textContent = 'Could not start this demo: ' + e.message; dlg.querySelector('[data-lab-status]').hidden = false; }
+async function open(i) {
+  dlg = document.getElementById('lab'); canvas = dlg.querySelector('canvas'); const status = dlg.querySelector('[data-lab-status]');
+  active = DEMOS[i]; state = {}; running = false; cancelAnimationFrame(raf);
+  dlg.querySelector('[data-lab-title]').textContent = `${String(i + 1).padStart(2, '0')} · ${active.title}`;
+  dlg.querySelector('[data-lab-label]').textContent = active.label;
+  dlg.querySelector('[data-lab-hint]').textContent = active.hint;
+  dlg.querySelectorAll('[data-lab-nav]').forEach(b => b.dataset.target = (i + (b.dataset.labNav === 'next' ? 1 : DEMOS.length - 1)) % DEMOS.length);
+  const bar = dlg.querySelector('[data-lab-buttons]'); bar.innerHTML = '';
+  if (!dlg.open) dlg.showModal();
+  status.hidden = false; status.textContent = 'Compiling the original shaders…';
+  if (!ensureGL()) { status.textContent = 'WebGL 2 is not available in this browser, so the live demos cannot run here.'; return; }
+  try { await active.init(state); } catch (e) { fail(e); return; }
+  (active.buttons ? active.buttons(state) : []).forEach(([label, fn]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', () => { fn(); canvas.focus(); }); bar.appendChild(b); });
+  status.hidden = true; running = true; last = performance.now(); t0 = performance.now(); raf = requestAnimationFrame(loop); canvas.focus();
+}
+function close() { running = false; cancelAnimationFrame(raf); if (dlg && dlg.open) dlg.close(); }
+function wire() {
+  dlg = document.getElementById('lab'); if (!dlg) return; canvas = dlg.querySelector('canvas');
+  document.querySelectorAll('[data-lab-open]').forEach(b => b.addEventListener('click', () => open(+b.dataset.labOpen)));
+  dlg.querySelector('[data-lab-close]').addEventListener('click', close);
+  dlg.addEventListener('close', () => { running = false; cancelAnimationFrame(raf); });
+  dlg.querySelectorAll('[data-lab-nav]').forEach(b => b.addEventListener('click', () => open(+b.dataset.target)));
+  const ptr = { down: false, x: 0, y: 0, moved: 0 };
+  const evt = (e, extra = {}) => { const r = canvas.getBoundingClientRect(), dpr = canvas.width / r.width;
+    return { x: (e.clientX - r.left) * dpr, y: (e.clientY - r.top) * dpr, w: canvas.width, h: canvas.height, dpr, u: (e.clientX - r.left) / r.width, v: (e.clientY - r.top) / r.height,
+      shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey, ...extra }; };
+  canvas.addEventListener('pointerdown', e => { ptr.down = true; ptr.x = e.clientX; ptr.y = e.clientY; ptr.moved = 0; canvas.setPointerCapture(e.pointerId); canvas.focus(); });
+  canvas.addEventListener('pointermove', e => { if (!running) return;
+    if (active.move) active.move(state, evt(e));
+    if (!ptr.down) return; const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y; ptr.x = e.clientX; ptr.y = e.clientY; ptr.moved += Math.abs(dx) + Math.abs(dy);
+    if (active.drag && (dx || dy)) active.drag(state, evt(e, { dx, dy })); });
+  canvas.addEventListener('pointerup', e => { ptr.down = false; if (running && ptr.moved < 6 && active.click) active.click(state, evt(e)); });
+  canvas.addEventListener('wheel', e => { if (!running || !active.wheel) return; e.preventDefault(); active.wheel(state, evt(e, { dy: -Math.sign(e.deltaY) })); }, { passive: false });
+  canvas.addEventListener('keydown', e => { if (!running) return; const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    let used = false; if (active.keydown) used = active.keydown(state, k); if (!used && active.key) used = active.key(state, k); if (used) e.preventDefault(); });
+  canvas.addEventListener('keyup', e => { if (running && active.keyup) active.keyup(state, e.key.toLowerCase()); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
+window.ShaderLab = { open, close, DEMOS };
+})();
+</script>
+
+</body>
+</html>

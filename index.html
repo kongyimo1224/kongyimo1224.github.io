@@ -166,6 +166,32 @@ h3{font-family:var(--display);font-weight:500;font-size:22px;line-height:1.2;mar
 .lab-foot p{margin:0;color:var(--hud-dim);font-size:12px;flex:1 1 320px;min-width:0}
 .lab-buttons{display:flex;gap:6px;flex-wrap:wrap}
 @media (max-width:600px){.lab-stage canvas{height:52vh}.lab-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.lab-tile span{font-size:9.5px;padding:10px 4px 3px}}
+
+/* flatland bound */
+.fb-stage{background:#1b1636}
+.fb-stage canvas{display:block;width:100%;aspect-ratio:16/9;touch-action:pan-y;cursor:grab;outline:none}
+.fb-stage canvas:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.fb-ctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;border-top:1px solid #1f242c;font-family:var(--mono);font-size:12px}
+.fb-levels{display:flex;gap:2px}
+.fb-ctrl button{font:inherit;color:var(--hud-dim);background:transparent;border:1px solid #2b323d;border-radius:4px;padding:6px 10px;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
+.fb-ctrl button:hover{color:var(--hud-ink)}
+.fb-ctrl button[aria-pressed="true"],.fb-ctrl button.on{color:var(--hud-ink);background:#1b2028;border-color:#3a4350}
+.fb-hold{color:#ffb38a!important}
+.fb-ctrl input[type=range]{flex:1 1 120px;min-width:0;accent-color:#ff7a3d}
+.lat{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px 14px;margin:0 0 20px}
+.lat-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:8px}
+.lat-pick{display:flex;gap:4px}
+.lat-pick button{font:inherit;font-family:var(--mono);font-size:12px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:4px;padding:3px 8px;cursor:pointer}
+.lat-pick button[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.lat-row{display:grid;grid-template-columns:104px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.lat-row i{display:block;height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.lat-row b{display:block;height:100%;background:#2f9e44;border-radius:5px;transition:width .35s ease}
+.lat-row.off b{background:var(--accent)}
+.lat-row em{font-style:normal;font-family:var(--mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.lat small{display:block;color:var(--muted);font-size:12px;margin-top:6px}
+@media (max-width:480px){.lat-row{grid-template-columns:88px minmax(0,1fr) 78px}}
+@media (max-width:600px){.fb-stage canvas{aspect-ratio:4/3}}
+@media (prefers-reduced-motion:reduce){.lat-row b{transition:none}}
 /* experience */
 .timeline{display:grid;gap:0}
 .row{display:grid;grid-template-columns:180px minmax(0,1fr);gap:24px;padding-block:18px;border-bottom:1px solid var(--line)}
@@ -331,7 +357,60 @@ footer{padding-block:28px 40px;color:var(--muted);font-size:13px;border-top:1px 
       </div>
     </div>
 
-    <article class="project flip">
+    <article class="project flip" id="flatland">
+      <div class="media-col">
+        <div class="viewport" data-switcher>
+          <div class="vp-bar"><span><b data-label>Level 1 · First Light</b> · autoplay</span><span>inputs from my level solver</span></div>
+          <div class="vp-media" style="aspect-ratio:16/9"><video data-screen src="assets/fb-l1.mp4" poster="assets/fb-l1.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Flatland Bound gameplay"></video>
+            <div class="hud" data-hud>left: <span>P1's view</span> · right: P2's view, turned 90°</div></div>
+          <div class="vp-tabs" role="tablist" aria-label="Flatland Bound levels">
+            <button type="button" role="tab" aria-selected="true" id="fb-v1" data-src="assets/fb-l1" data-label="Level 1 · First Light" data-hud="left: &lt;span&gt;P1's view&lt;/span&gt; · right: P2's view, turned 90°">1 First Light</button>
+            <button type="button" role="tab" aria-selected="false" id="fb-v2" data-src="assets/fb-l2" data-label="Level 2 · Glass" data-hud="coral glass holds P1, cyan holds P2 · &lt;span&gt;nobody else&lt;/span&gt;">2 Glass</button>
+            <button type="button" role="tab" aria-selected="false" id="fb-v3" data-src="assets/fb-l3" data-label="Level 3 · Two Doors" data-hud="a door each · &lt;span&gt;one turn rarely suits you both&lt;/span&gt;">3 Two Doors</button>
+            <button type="button" role="tab" aria-selected="false" id="fb-v4" data-src="assets/fb-l4" data-label="Level 4 · Thorns" data-hud="a turn can &lt;span&gt;shove your partner&lt;/span&gt; into the crystals">4 Thorns</button>
+            <button type="button" role="tab" aria-selected="false" id="fb-v5" data-src="assets/fb-l5" data-label="Level 5 · Eclipse" data-hud="8 turns · &lt;span&gt;6 of them hurt somebody&lt;/span&gt;">5 Eclipse</button>
+          </div>
+        </div>
+        <div class="viewport fb-demo">
+          <div class="vp-bar"><span><b>Turn the world</b> · try it</span><span id="fb-read">P1 0° · P2 90°</span></div>
+          <div class="fb-stage"><canvas id="fb-canvas" tabindex="0" aria-label="Interactive projection of a Flatland Bound level. Hold Q or E, drag, or use the slider to turn the world."></canvas></div>
+          <div class="fb-ctrl">
+            <div class="fb-levels" role="group" aria-label="Level">
+              <button type="button" id="fb-lv1" data-lv="0" aria-pressed="true">1</button><button type="button" id="fb-lv2" data-lv="1" aria-pressed="false">2</button><button type="button" id="fb-lv3" data-lv="2" aria-pressed="false">3</button><button type="button" id="fb-lv4" data-lv="3" aria-pressed="false">4</button><button type="button" id="fb-lv5" data-lv="4" aria-pressed="false">5</button>
+            </div>
+            <button type="button" class="fb-hold" id="fb-q" data-dir="-1">◀ hold Q</button>
+            <input type="range" id="fb-angle" min="0" max="359" step="1" value="0" aria-label="World angle in degrees">
+            <button type="button" class="fb-hold" id="fb-e" data-dir="1">hold E ▶</button>
+          </div>
+        </div>
+      </div>
+      <div class="text-col">
+        <h3>Flatland Bound</h3>
+        <p class="role">Solo project · networked co-op · Sep – Oct 2026</p>
+        <p>Two players share one 3D voxel world but each only ever sees a flat projection of it: P1 from the front, P2 from 90° round. Anyone can turn the world to any angle, and the physics keeps running while it turns, so the turn that builds a bridge for you can slide the floor out from under your partner.</p>
+        <div class="stats">
+          <div class="stat"><b>17 ms</b><small>key to screen at any ping, with prediction</small></div>
+          <div class="stat"><b>199→1.7%</b><small>idle server CPU after the rewrite</small></div>
+          <div class="stat"><b>100%</b><small>ties won by the real first presser</small></div>
+        </div>
+        <div class="lat" id="fb-lat">
+          <div class="lat-head"><span>Input delay at</span>
+            <div class="lat-pick" role="group" aria-label="Emulated one-way latency"><button type="button" id="fb-p0" data-ms="0" aria-pressed="true">0 ms</button><button type="button" id="fb-p25" data-ms="25" aria-pressed="false">25</button><button type="button" id="fb-p50" data-ms="50" aria-pressed="false">50</button><button type="button" id="fb-p100" data-ms="100" aria-pressed="false">100</button></div></div>
+          <div class="lat-row"><span>prediction on</span><i><b id="fb-on" style="width:5%"></b></i><em id="fb-on-v">16.8 ms</em></div>
+          <div class="lat-row off"><span>prediction off</span><i><b id="fb-off" style="width:41%"></b></i><em id="fb-off-v">135 ms</em></div>
+          <small>Measured with scripted key presses and emulated latency on one machine.</small>
+        </div>
+        <ul>
+          <li>Client-side prediction with server reconciliation: inputs are numbered every tick and the server applies exactly one per tick. With 10% of inputs lost, only 4 of 928 snapshots moved the predicted player.</li>
+          <li>NTP-style clock sync: turns start on the server clock, so both screens start turning within 2–5 ms at 100 ms latency, and simultaneous presses are settled by timestamp.</li>
+          <li>Rewrote the course's busy-waiting server as event-driven and lock-free (DDS waitsets, C11-atomic SPSC queues, 25× a mutex queue), secured with DDS Security: X.509, signed permissions and AES-GCM.</li>
+          <li>Any-angle projected collision, a level generator and a two-player solver on the real physics; the solver's routes became the input tapes that play the footage above.</li>
+        </ul>
+        <ul class="tags"><li>C11</li><li>OpenGL 3.3</li><li>Cyclone DDS</li><li>Netcode</li><li>Lock-free</li><li>Linux</li></ul>
+      </div>
+    </article>
+
+    <article class="project">
       <div class="media-col">
         <div class="viewport" data-switcher>
           <div class="vp-bar"><span><b data-label>3D City View</b> · Singapore</span><span>Babylon.js × MapLibre GL</span></div>
@@ -363,7 +442,7 @@ footer{padding-block:28px 40px;color:var(--muted);font-size:13px;border-top:1px 
       </div>
     </article>
 
-    <article class="project">
+    <article class="project flip">
       <div class="media-col">
         <div class="viewport" data-switcher>
           <div class="vp-bar"><span><b data-label>It starts to rain</b> · 四水归堂</span><span>Unreal Engine 5 · Lumen</span></div>
@@ -552,6 +631,210 @@ document.getElementById('copy-email').addEventListener('click', e => {
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); v.controls = true; });
 }
+</script>
+<script>(() => {
+  const LV = [{"name":"First Light","hint":"Hold Q or E to turn the world. Somewhere round the corner, the gap closes.","n":10,"h":7,"s1":[0.5,1.5,8.5],"s2":[2.5,1.5,8.5],"v":"0,0,7,#;1,0,7,#;2,0,7,#;0,0,8,#;1,0,8,#;2,0,8,#;0,0,9,#;1,0,9,#;2,0,9,#;5,1,2,#;6,1,2,#;1,1,9,#;2,2,2,#;3,2,2,#;4,2,2,#;5,2,2,G;5,2,9,#;"},{"name":"Glass","hint":"Coral glass holds P1, cyan glass holds P2. Nobody else.","n":12,"h":8,"s1":[0.5,1.5,10.5],"s2":[2.5,1.5,10.5],"v":"0,0,9,#;1,0,9,#;2,0,9,#;0,0,10,#;1,0,10,#;2,0,10,#;0,0,11,#;1,0,11,#;2,0,11,#;3,1,6,#;11,1,11,#;3,2,7,#;0,2,11,C;10,3,4,#;10,3,5,#;3,3,8,#;5,4,1,#;6,4,1,#;5,4,2,#;6,4,2,#;9,4,8,#;10,4,8,#;9,4,9,#;10,4,9,#;9,4,10,#;10,4,10,#;7,5,1,#;8,5,1,#;11,5,8,#;11,5,9,#;11,5,10,#;11,5,11,#;7,6,1,G;"},{"name":"Two Doors","hint":"Each of you has your own door. One turn rarely suits you both.","n":12,"h":9,"s1":[0.5,1.5,10.5],"s2":[2.5,1.5,10.5],"v":"2,0,1,#;3,0,8,#;0,0,9,#;1,0,9,#;2,0,9,#;0,0,10,#;1,0,10,#;2,0,10,#;0,0,11,#;1,0,11,#;2,0,11,#;2,1,1,#;6,1,6,#;11,1,7,#;3,1,8,#;11,1,8,#;11,1,9,#;11,1,10,#;7,2,6,#;3,2,8,#;8,3,6,#;3,3,8,#;0,3,9,#;2,3,11,#;3,3,11,#;0,4,8,#;3,4,8,#;6,4,8,#;9,4,8,#;10,4,8,#;7,5,8,#;9,5,8,2;4,6,0,#;5,6,0,#;8,6,8,#;4,7,0,1;10,7,1,#;11,7,1,#;"},{"name":"Thorns","hint":"Turn carefully: the world can push your partner into the crystals.","n":12,"h":10,"s1":[0.5,1.5,10.5],"s2":[2.5,1.5,10.5],"v":"0,0,9,#;1,0,9,#;2,0,9,#;0,0,10,#;1,0,10,#;2,0,10,#;9,0,10,#;0,0,11,#;1,0,11,#;2,0,11,#;9,1,10,#;5,1,11,#;6,1,11,#;7,2,2,#;9,2,10,#;8,3,2,#;7,3,4,#;8,3,4,#;9,3,4,#;2,3,6,#;2,3,7,#;2,3,8,#;9,3,10,#;9,4,2,#;11,4,4,#;11,4,5,#;4,4,11,#;5,4,11,#;6,4,11,#;7,4,11,#;5,5,4,#;6,5,4,#;3,6,6,X;11,6,6,#;3,6,7,X;11,6,7,#;11,6,8,#;11,6,9,#;5,7,1,#;6,7,1,#;5,8,1,G;"},{"name":"Eclipse","hint":"Everything you have learned, all at once. Talk to each other.","n":14,"h":12,"s1":[0.5,1.5,12.5],"s2":[2.5,1.5,12.5],"v":"13,0,3,#;0,0,11,#;1,0,11,#;2,0,11,#;0,0,12,#;1,0,12,#;2,0,12,#;0,0,13,#;1,0,13,#;2,0,13,#;0,1,0,#;1,1,0,#;2,1,0,#;3,1,0,#;13,1,3,#;2,1,6,R;2,1,7,R;2,1,8,R;2,1,9,R;3,1,9,#;1,2,0,C;2,2,0,C;3,2,0,C;13,2,3,#;13,2,8,#;13,2,9,#;13,2,10,#;13,2,11,#;5,2,13,R;6,2,13,R;7,2,13,R;13,3,3,#;2,4,5,#;3,4,5,#;10,4,5,#;11,4,5,#;2,4,6,#;3,4,6,#;2,4,7,#;3,4,7,#;11,4,7,C;12,4,7,C;13,4,7,C;3,5,1,#;5,5,3,#;10,5,5,2;5,5,10,X;5,5,11,X;5,5,12,X;4,6,1,#;5,6,4,#;12,6,5,#;13,6,5,#;5,7,1,#;5,7,3,R;9,7,3,X;5,7,4,R;9,7,4,X;5,7,5,#;9,7,5,X;12,7,5,1;"}];
+  const cv = document.getElementById('fb-canvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const read = document.getElementById('fb-read');
+  const slider = document.getElementById('fb-angle');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lvl = null, angle = 0, W = 0, H = 0, dpr = 1;
+  let hold = 0, holdStart = 0, raf = 0, last = 0;
+  const ANNOUNCE = 0.7, SPEED = 75;
+
+  function load(i) {
+    const L = LV[i];
+    const vox = L.v.split(';').filter(Boolean).map(s => { const p = s.split(','); return { x: +p[0], y: +p[1], z: +p[2], c: p[3] }; });
+    lvl = { ...L, vox };
+    angle = 0; slider.value = 0;
+    document.querySelectorAll('[data-lv]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.lv === i));
+    draw();
+  }
+
+  function resize() {
+    const r = cv.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+    cv.width = W * dpr; cv.height = H * dpr;
+    draw();
+  }
+
+  const solidFor = (c, who) => c === '#' || (c === 'R' && who === 1) || (c === 'C' && who === 2);
+  const goalFor = (c, who) => c === 'G' || (c === '1' && who === 1) || (c === '2' && who === 2);
+  function mix(a, b, t) { return a.map((v, k) => Math.round(v + (b[k] - v) * t)); }
+  const rgb = (a, al = 1) => `rgba(${a[0]},${a[1]},${a[2]},${al})`;
+
+  function pane(px, pw, ph, ang, who) {
+    const n = lvl.n, h = lvl.h, half = n / 2;
+    const s = Math.sin(ang), c = Math.cos(ang);
+    const as = Math.abs(s) < 1e-5 ? 0 : Math.abs(s), ac = Math.abs(c) < 1e-5 ? 0 : Math.abs(c);
+    const hw = 0.5 * (as + ac);
+    const top = ph * 0.2, bottom = ph * 0.25, pad = pw * 0.06;
+    const sc = Math.min((pw - 2 * pad) / (n * Math.SQRT2), (ph - top - bottom) / h);
+    const cx = px + pw / 2, base = ph - bottom;
+    const toX = u => cx + (u - half) * sc;
+    const toY = y => base - y * sc;
+    const items = lvl.vox.map(v => {
+      const rx = v.x + 0.5 - half, rz = v.z + 0.5 - half;
+      return { ...v, u: half + c * rx - s * rz, d: half - (s * rx + c * rz) };
+    }).sort((a, b) => b.d - a.d);
+    const far = [196, 186, 214], near = [244, 236, 226];
+    for (const it of items) {
+      const t = Math.max(0, Math.min(1, 1 - (it.d) / n));
+      const x0 = toX(it.u - hw), x1 = toX(it.u + hw), y0 = toY(it.y + 1), y1 = toY(it.y);
+      const w = x1 - x0, hh = y1 - y0;
+      if (it.c === '#' || it.c === 'R' || it.c === 'C') {
+        const own = solidFor(it.c, who);
+        let col = mix(far, near, t);
+        if (it.c === 'R') col = own ? mix([200, 92, 78], [255, 138, 110], t) : [255, 138, 110];
+        if (it.c === 'C') col = own ? mix([46, 160, 152], [92, 226, 210], t) : [92, 226, 210];
+        if (own) {
+          ctx.fillStyle = rgb(col); ctx.fillRect(x0, y0, w, hh);
+          ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x0, y0, w, Math.max(1, hh * 0.12));
+          ctx.strokeStyle = 'rgba(40,30,60,.28)'; ctx.lineWidth = 1; ctx.strokeRect(x0 + .5, y0 + .5, w - 1, hh - 1);
+        } else {
+          ctx.fillStyle = rgb(col, 0.12); ctx.fillRect(x0, y0, w, hh);
+          ctx.setLineDash([3, 3]); ctx.strokeStyle = rgb(col, 0.55); ctx.strokeRect(x0 + .5, y0 + .5, w - 1, hh - 1); ctx.setLineDash([]);
+        }
+      } else if (it.c === 'X') {
+        ctx.fillStyle = 'rgba(255,60,150,.9)';
+        const k = Math.max(2, Math.round(w / 6));
+        for (let j = 0; j < 3; j++) {
+          const bx = x0 + w * (0.2 + j * 0.3);
+          ctx.beginPath(); ctx.moveTo(bx - w * 0.1, y1); ctx.lineTo(bx, y0 + hh * 0.15); ctx.lineTo(bx + w * 0.1, y1); ctx.fill();
+        }
+        ctx.shadowBlur = 0; void k;
+      } else if (goalFor(it.c, who) || it.c === '1' || it.c === '2') {
+        const mine = goalFor(it.c, who);
+        const gx = (x0 + x1) / 2, gy = (y0 + y1) / 2, r = sc * 0.28;
+        const col = it.c === '1' ? [255, 160, 120] : it.c === '2' ? [120, 235, 220] : [255, 214, 120];
+        ctx.globalAlpha = mine ? 1 : 0.25;
+        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, r * 3);
+        g.addColorStop(0, rgb(col, 0.55)); g.addColorStop(1, rgb(col, 0));
+        ctx.fillStyle = g; ctx.fillRect(gx - r * 3, gy - r * 3, r * 6, r * 6);
+        ctx.fillStyle = rgb(col); ctx.beginPath();
+        ctx.moveTo(gx, gy - r); ctx.lineTo(gx + r, gy); ctx.lineTo(gx, gy + r); ctx.lineTo(gx - r, gy); ctx.fill();
+        ctx.fillStyle = rgb(col, 0.25); ctx.fillRect(gx - 1, 0, 2, gy - r);
+        ctx.globalAlpha = 1;
+      }
+    }
+    // the two players at their spawn points: your own body solid, your partner as a ghost
+    [[lvl.s1, [255, 122, 92], 1], [lvl.s2, [64, 214, 200], 2]].forEach(([sp, col, id]) => {
+      const rx = sp[0] - half, rz = sp[2] - half;
+      const u = half + c * rx - s * rz;
+      const bw = 0.62 * sc, bh = 0.8 * sc, bx = toX(u) - bw / 2, by = toY(sp[1] - 0.5) - bh;
+      ctx.fillStyle = rgb(col, id === who ? 1 : 0.38); ctx.fillRect(bx, by, bw, bh);
+      if (id === who) { ctx.fillStyle = '#2a1d33'; ctx.fillRect(bx + bw * 0.25, by + bh * 0.3, bw * 0.12, bh * 0.16); ctx.fillRect(bx + bw * 0.63, by + bh * 0.3, bw * 0.12, bh * 0.16); }
+      ctx.font = `600 ${Math.max(9, sc * 0.32)}px "JetBrains Mono",monospace`; ctx.textAlign = 'center';
+      ctx.fillStyle = rgb(col, id === who ? 1 : 0.6); ctx.fillText('P' + id, bx + bw / 2, by - 4);
+    });
+    // pane label
+    const deg = Math.round(((ang * 180 / Math.PI) % 360 + 360) % 360);
+    ctx.textAlign = 'left'; ctx.font = `600 ${Math.max(10, pw * 0.028)}px "JetBrains Mono",monospace`;
+    ctx.fillStyle = who === 1 ? '#ff9a7d' : '#6fe6d6';
+    ctx.fillText(`P${who}'S VIEW  ${deg}°`, px + pad * 0.6, ph * 0.09);
+  }
+
+  function minimap(t) {
+    const n = lvl.n, size = H * 0.17, x0 = W / 2 - size / 2, y0 = H - size - H * 0.03, cell = size / n;
+    ctx.fillStyle = 'rgba(14,12,26,.72)'; ctx.fillRect(x0 - 6, y0 - 6, size + 12, size + 12);
+    const top = new Map();
+    lvl.vox.forEach(v => { if (v.c === '#' || v.c === 'R' || v.c === 'C') { const k = v.x + ',' + v.z; top.set(k, Math.max(top.get(k) ?? -1, v.y)); } });
+    top.forEach((y, k) => { const [x, z] = k.split(',').map(Number); const tt = 0.35 + 0.65 * (y / (lvl.h - 1));
+      ctx.fillStyle = rgb(mix([90, 80, 120], [240, 232, 222], tt)); ctx.fillRect(x0 + x * cell + .5, y0 + z * cell + .5, cell - 1, cell - 1); });
+    const cxm = x0 + size / 2, cym = y0 + size / 2, R = size * 0.66;
+    [[t, '#ff7a5c'], [t + Math.PI / 2, '#40d6c8']].forEach(([a, col]) => {
+      const s = Math.sin(a), c = Math.cos(a);
+      const ex = cxm + s * R, ey = cym + c * R, ix = cxm + s * R * 0.78, iy = cym + c * R * 0.78;
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ix, iy); ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ex, ey, 3.5, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.font = `500 ${Math.max(9, size * 0.075)}px "JetBrains Mono",monospace`; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(232,230,225,.7)'; ctx.textAlign = 'left'; ctx.fillText('top view', x0 + size + 14, cym + 4);
+  }
+
+  function draw() {
+    if (!lvl || !W) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#1b1636'); g.addColorStop(0.55, '#5b3f7e'); g.addColorStop(0.85, '#d69a86'); g.addColorStop(1, '#e8b796');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const a = angle * Math.PI / 180, pw = W / 2;
+    pane(0, pw, H, a, 1);
+    pane(pw, pw, H, a + Math.PI / 2, 2);
+    ctx.fillStyle = 'rgba(20,16,36,.65)'; ctx.fillRect(pw - 1, 0, 2, H);
+    minimap(a);
+    // hint / announcement
+    ctx.textAlign = 'center';
+    if (hold && performance.now() - holdStart < ANNOUNCE * 1000) {
+      const left = (ANNOUNCE - (performance.now() - holdStart) / 1000).toFixed(1);
+      ctx.font = `700 ${Math.max(13, W * 0.026)}px "Unbounded","Arial Black",sans-serif`;
+      ctx.fillStyle = '#ffd78a'; ctx.fillText(`TURNING IN ${left} s`, W / 2, H * 0.2);
+    } else {
+      ctx.font = `600 ${Math.max(12, W * 0.022)}px "IBM Plex Sans",system-ui,sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fillText(lvl.name, W / 2, H * 0.16);
+      ctx.font = `400 ${Math.max(10, W * 0.014)}px "IBM Plex Sans",system-ui,sans-serif`;
+      if (W >= 520) { ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillText(lvl.hint, W / 2, H * 0.16 + Math.max(14, W * 0.024)); }
+    }
+    const d1 = Math.round(((angle % 360) + 360) % 360), d2 = (d1 + 90) % 360;
+    read.textContent = `P1 ${d1}° · P2 ${d2}°`;
+  }
+
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (hold && now - holdStart >= ANNOUNCE * 1000) {
+      angle = ((angle + hold * SPEED * dt) % 360 + 360) % 360;
+      slider.value = Math.round(angle) % 360;
+    }
+    draw();
+    raf = hold ? requestAnimationFrame(tick) : 0;
+  }
+  function startHold(dir) {
+    if (hold === dir) return;
+    hold = dir; holdStart = performance.now() - (reduce ? ANNOUNCE * 1000 : 0); last = performance.now();
+    document.querySelectorAll('.fb-hold').forEach(b => b.classList.toggle('on', +b.dataset.dir === dir));
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  function stopHold() {
+    hold = 0; document.querySelectorAll('.fb-hold').forEach(b => b.classList.remove('on')); draw();
+  }
+
+  document.querySelectorAll('.fb-hold').forEach(b => {
+    b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture?.(e.pointerId); startHold(+b.dataset.dir); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, stopHold));
+    b.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); startHold(+b.dataset.dir); } });
+    b.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') stopHold(); });
+  });
+  const keyDir = k => k === 'q' || k === 'Q' || k === 'ArrowLeft' ? -1 : k === 'e' || k === 'E' || k === 'ArrowRight' ? 1 : 0;
+  cv.addEventListener('keydown', e => { const d = keyDir(e.key); if (d) { e.preventDefault(); startHold(d); } });
+  cv.addEventListener('keyup', e => { if (keyDir(e.key)) stopHold(); });
+  cv.addEventListener('blur', stopHold);
+  slider.addEventListener('input', () => { angle = +slider.value; draw(); });
+  let drag = null;
+  cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, a: angle }; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+  cv.addEventListener('pointermove', e => { if (!drag) return; angle = ((drag.a + (e.clientX - drag.x) * 360 / W) % 360 + 360) % 360; slider.value = Math.round(angle) % 360; draw(); });
+  const endDrag = () => { drag = null; cv.style.cursor = ''; };
+  cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+  document.querySelectorAll('[data-lv]').forEach(b => b.addEventListener('click', () => load(+b.dataset.lv)));
+
+  load(0);
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(cv); else addEventListener('resize', resize);
+  resize();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+
+  // latency widget: measured numbers from the project's BENCHMARKS.md
+  const LAT = { 0: [16.8, 135, '135 ms'], 25: [16.8, 168, '168 ms'], 50: [16.7, 210, '201–218 ms'], 100: [16.8, 310, '302–318 ms'] };
+  const on = document.getElementById('fb-on'), off = document.getElementById('fb-off');
+  const onv = document.getElementById('fb-on-v'), offv = document.getElementById('fb-off-v');
+  document.querySelectorAll('[data-ms]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-ms]').forEach(o => o.setAttribute('aria-pressed', o === b));
+    const [a, o, label] = LAT[b.dataset.ms];
+    on.style.width = (a / 330 * 100) + '%'; off.style.width = (o / 330 * 100) + '%';
+    onv.textContent = a + ' ms'; offv.textContent = label;
+  }));
+})();
 </script>
 <script>/* Shader Lab: a WebGL2 port of Yimo Kong's CSD2151 OpenGL portfolio (Assignment 12).
    The GLSL shaders are the original files, loaded verbatim and converted to GLSL ES 3.00 at runtime.
